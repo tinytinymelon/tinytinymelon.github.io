@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Leo Zhou">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Leo Zhou">
+    
+    <meta name="keywords" content="big data,spark,llvm,micro">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>ARM ISA Overview · Tiny Tiny Melon</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon_tree.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+</head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >Tiny Tiny Melon</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">ARM ISA Overview</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>Tiny Tiny Melon</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            ARM ISA Overview
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">2.8k</span>Reading time: <span class="post-count reading-time">15 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2019/11/14</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="1-指令"><a href="#1-指令" class="headerlink" title="1. 指令"></a>1. 指令</h1><p>ARM中能看到的指令集包括：</p>
+<ul>
+<li><strong>thumb</strong>: 16bit的指令集</li>
+<li><strong>thumb-2</strong>: thumb的升级版，16bit/32bit混合指令集</li>
+<li><strong>arm</strong>: 32bit的指令集</li>
+<li><strong>A32</strong>: ARMv8中的<strong>arm</strong>指令集</li>
+<li><strong>T32</strong>: ARMv8中的<strong>thumb-2</strong>指令集，同时包含一些拓展</li>
+<li><strong>A64</strong>: ARMv8的64bit的指令集</li>
+<li><strong>Neon</strong>: ARM的SIMD指令集</li>
+<li></li>
+</ul>
+<p>ARMv8支持两种state：</p>
+<ul>
+<li>AArch64: 使用A64指令集，一种32bit fix length的指令集<ul>
+<li>支持31个64bit的通用寄存器</li>
+<li>使用64bit的PC和SP寄存器</li>
+<li>支持32个128bit的SIMD寄存器</li>
+</ul>
+</li>
+<li>AArch32: 支持A32或者T32指令集<ul>
+<li>支持32个32bit的通用寄存器</li>
+<li>使用32bit的PC和SP寄存器</li>
+<li>支持32个64bit的SIMD寄存器</li>
+</ul>
+</li>
+</ul>
+<p>注意的是ARMv8的A32和T32向前兼容的同时，还包括了其他一些拓展。</p>
+<h1 id="2-ARM-Profile"><a href="#2-ARM-Profile" class="headerlink" title="2. ARM Profile"></a>2. ARM Profile</h1><p>ARM系列一般都能看到A，R和M系列，分别代表着：普通应用，实时计算和移动处理的三种不同的需求。</p>
+<p>具体以ARMv8为例子，下面摘自ARM的官方文档：</p>
+<blockquote>
+<ul>
+<li>A Application profile:<ul>
+<li>Supports a Virtual Memory System Architecture (VMSA) based on a Memory Management Unit (MMU).</li>
+<li>Supports the A64, A32, and T32 instruction sets.</li>
+</ul>
+</li>
+<li>R Real-time profile:<ul>
+<li>Supports a Protected Memory System Architecture (PMSA) based on a Memory Protection Unit (MPU).</li>
+<li>Supports the A32 and T32 instruction sets.</li>
+</ul>
+</li>
+<li>M Microcontroller profile, described in this manual:<ul>
+<li>Implements a programmers’ model designed for low-latency interrupt processing, with hardware stacking of registers and support for writing interrupt handlers in high-level languages.</li>
+<li>Optionally implements a variant of the R-profile PMSA.</li>
+<li>Supports a variant of the T32 instruction set.</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<h1 id="3-LLVM-ARMv7-Register"><a href="#3-LLVM-ARMv7-Register" class="headerlink" title="3. LLVM ARMv7 Register"></a>3. LLVM ARMv7 Register</h1><p>我们可以在<code>lib/target/ARM/ARMRegisterInfo.td</code>中找到所有寄存器的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// Registers are identified with 4-bit ID numbers.</span><br><span class="line">class ARMReg&lt;bits&lt;16&gt; Enc, string n, list&lt;Register&gt; subregs = [],</span><br><span class="line">             list&lt;string&gt; altNames = []&gt; : Register&lt;n, altNames&gt; &#123;</span><br><span class="line">  let HWEncoding = Enc;</span><br><span class="line">  let Namespace = &quot;ARM&quot;;</span><br><span class="line">  let SubRegs = subregs;</span><br><span class="line">  // All bits of ARM registers with sub-registers are covered by sub-registers.</span><br><span class="line">  let CoveredBySubRegs = 1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class ARMFReg&lt;bits&lt;16&gt; Enc, string n&gt; : Register&lt;n&gt; &#123;</span><br><span class="line">  let HWEncoding = Enc;</span><br><span class="line">  let Namespace = &quot;ARM&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述是两个基类，定义了整数寄存器和浮点寄存器的基类。总结来说，ARMv7的数据存储寄存器包括：</p>
+<ul>
+<li><strong>r1-r12</strong> 32bit integer register</li>
+<li><strong>pc</strong>, <strong>lr</strong>, <strong>sp</strong> 32bit integer register</li>
+<li><strong>q0-q16</strong> 128bit integer register<ul>
+<li>sub-reg: <strong>d0-d15</strong> 64bit float register<ul>
+<li>sub-reg: <strong>s0-s31</strong> 32bit float register</li>
+</ul>
+</li>
+<li>sub-reg: <strong>d16-d31</strong> 64bit float regiter</li>
+</ul>
+</li>
+</ul>
+<p>一般而言，有些寄存器有固定/约定的用处：</p>
+<ul>
+<li>pc  == Program Counter</li>
+<li>lr  == Link Register</li>
+<li>sp  == Stack Pointer</li>
+<li>r12 == ip (scratch)</li>
+<li>r7  == Frame Pointer (thumb-style backtraces)</li>
+<li>r9  == May be reserved as Thread Register</li>
+<li>r11 == Frame Pointer (arm-style backtraces)</li>
+<li>r10 == Stack Limit</li>
+</ul>
+<p>另外还有一系列控制寄存器，以下仅举例后续用到再做分析。除了APSR，大部分其他控制寄存器都是要在非用户模式下才能操作：</p>
+<ul>
+<li>Program Status Register<ul>
+<li><strong>APSR</strong>: Application Program Status Register, 32bit integer register<ul>
+<li>类似与x86的EFLAGs，用于记录condition flag。</li>
+</ul>
+</li>
+<li><strong>CPSR</strong>: Current Program Status Register, 32bit integer register<ul>
+<li>似乎CPSR是APSR的alias。在用户模式叫APSR，在其他模式叫CPSR。</li>
+</ul>
+</li>
+<li><strong>SPSR</strong>: Saved Program Status Register, 32bit integer register<ul>
+<li>仅在非用户模式下使用，用于保存CPSR的信息，方便跳转回来时候回复环境。</li>
+</ul>
+</li>
+<li><strong>FPSCR</strong>: Floating-Point Status and Control Register, 32bit integer register<ul>
+<li>浮点状态寄存器。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Float Special Registe(Only privileged mode)<ul>
+<li><strong>FPSID</strong>: Floating-Point System ID Register, 32bit integer register<ul>
+<li>浮点系统设置寄存器，用来表明NEON/VFP等实现是否被使用。</li>
+</ul>
+</li>
+<li><strong>FPEXC</strong>: Floating-point Exception Register, 32bit integer register<ul>
+<li>用于表明在exception时候如何处理，特别是在NEON/VFP模式下面。</li>
+</ul>
+</li>
+<li><strong>FPINST and FPINST2</strong>Floating-Point Instruction Registers, 32bit integer register</li>
+</ul>
+</li>
+<li><strong>ITSTATE</strong>: Thumb if-then指令状态寄存器。</li>
+</ul>
+<h2 id="3-1-通用寄存器定义"><a href="#3-1-通用寄存器定义" class="headerlink" title="3.1. 通用寄存器定义"></a>3.1. 通用寄存器定义</h2><ul>
+<li>r0 - r15</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">// Integer registers</span><br><span class="line">def R0  : ARMReg&lt; 0, &quot;r0&quot;&gt;,  DwarfRegNum&lt;[0]&gt;;</span><br><span class="line">def R1  : ARMReg&lt; 1, &quot;r1&quot;&gt;,  DwarfRegNum&lt;[1]&gt;;</span><br><span class="line">def R2  : ARMReg&lt; 2, &quot;r2&quot;&gt;,  DwarfRegNum&lt;[2]&gt;;</span><br><span class="line">def R3  : ARMReg&lt; 3, &quot;r3&quot;&gt;,  DwarfRegNum&lt;[3]&gt;;</span><br><span class="line">def R4  : ARMReg&lt; 4, &quot;r4&quot;&gt;,  DwarfRegNum&lt;[4]&gt;;</span><br><span class="line">def R5  : ARMReg&lt; 5, &quot;r5&quot;&gt;,  DwarfRegNum&lt;[5]&gt;;</span><br><span class="line">def R6  : ARMReg&lt; 6, &quot;r6&quot;&gt;,  DwarfRegNum&lt;[6]&gt;;</span><br><span class="line">def R7  : ARMReg&lt; 7, &quot;r7&quot;&gt;,  DwarfRegNum&lt;[7]&gt;;</span><br><span class="line">// These require 32-bit instructions.</span><br><span class="line">let CostPerUse = 1 in &#123;  // extra cost when using</span><br><span class="line">def R8  : ARMReg&lt; 8, &quot;r8&quot;&gt;,  DwarfRegNum&lt;[8]&gt;;</span><br><span class="line">def R9  : ARMReg&lt; 9, &quot;r9&quot;&gt;,  DwarfRegNum&lt;[9]&gt;;</span><br><span class="line">def R10 : ARMReg&lt;10, &quot;r10&quot;&gt;, DwarfRegNum&lt;[10]&gt;;</span><br><span class="line">def R11 : ARMReg&lt;11, &quot;r11&quot;&gt;, DwarfRegNum&lt;[11]&gt;;</span><br><span class="line">def R12 : ARMReg&lt;12, &quot;r12&quot;&gt;, DwarfRegNum&lt;[12]&gt;;</span><br><span class="line">let RegAltNameIndices = [RegNamesRaw] in &#123; // 定义别名</span><br><span class="line">def SP  : ARMReg&lt;13, &quot;sp&quot;, [], [&quot;r13&quot;]&gt;,  DwarfRegNum&lt;[13]&gt;;</span><br><span class="line">def LR  : ARMReg&lt;14, &quot;lr&quot;, [], [&quot;r14&quot;]&gt;,  DwarfRegNum&lt;[14]&gt;;</span><br><span class="line">def PC  : ARMReg&lt;15, &quot;pc&quot;, [], [&quot;r15&quot;]&gt;,  DwarfRegNum&lt;[15]&gt;;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>q0 - q15</li>
+</ul>
+<p>q系列的寄存器包含了一系列的子寄存器，因此需要一系列的SubRegisterIndex来定义他们的关系：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">def dsub_0 : SubRegIndex&lt;64&gt;;</span><br><span class="line">def dsub_1 : SubRegIndex&lt;64, 64&gt;;</span><br></pre></td></tr></table></figure>
+
+<p>第一条描述了qx中的d(2x)index：从0开始，长度为64bit；第二条描述了d(2x+1)index：从64bit开始，长度64bit。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">// Advanced SIMD (NEON) defines 16 quad-word aliases</span><br><span class="line">let SubRegIndices = [dsub_0, dsub_1] in &#123;</span><br><span class="line">def Q0  : ARMReg&lt; 0,  &quot;q0&quot;, [D0,   D1]&gt;;</span><br><span class="line">def Q1  : ARMReg&lt; 1,  &quot;q1&quot;, [D2,   D3]&gt;;</span><br><span class="line">def Q2  : ARMReg&lt; 2,  &quot;q2&quot;, [D4,   D5]&gt;;</span><br><span class="line">def Q3  : ARMReg&lt; 3,  &quot;q3&quot;, [D6,   D7]&gt;;</span><br><span class="line">def Q4  : ARMReg&lt; 4,  &quot;q4&quot;, [D8,   D9]&gt;;</span><br><span class="line">def Q5  : ARMReg&lt; 5,  &quot;q5&quot;, [D10, D11]&gt;;</span><br><span class="line">def Q6  : ARMReg&lt; 6,  &quot;q6&quot;, [D12, D13]&gt;;</span><br><span class="line">def Q7  : ARMReg&lt; 7,  &quot;q7&quot;, [D14, D15]&gt;;</span><br><span class="line">&#125;</span><br><span class="line">let SubRegIndices = [dsub_0, dsub_1] in &#123;</span><br><span class="line">def Q8  : ARMReg&lt; 8,  &quot;q8&quot;, [D16, D17]&gt;;</span><br><span class="line">def Q9  : ARMReg&lt; 9,  &quot;q9&quot;, [D18, D19]&gt;;</span><br><span class="line">def Q10 : ARMReg&lt;10, &quot;q10&quot;, [D20, D21]&gt;;</span><br><span class="line">def Q11 : ARMReg&lt;11, &quot;q11&quot;, [D22, D23]&gt;;</span><br><span class="line">def Q12 : ARMReg&lt;12, &quot;q12&quot;, [D24, D25]&gt;;</span><br><span class="line">def Q13 : ARMReg&lt;13, &quot;q13&quot;, [D26, D27]&gt;;</span><br><span class="line">def Q14 : ARMReg&lt;14, &quot;q14&quot;, [D28, D29]&gt;;</span><br><span class="line">def Q15 : ARMReg&lt;15, &quot;q15&quot;, [D30, D31]&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到这里的<code>let SubRegIndices = [dsub_0, dsub_1]</code>。</p>
+<h2 id="3-2-控制寄存器的定义"><a href="#3-2-控制寄存器的定义" class="headerlink" title="3.2. 控制寄存器的定义"></a>3.2. 控制寄存器的定义</h2><p>相对没有什么花头，简单的定义，略掉一些。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">// Current Program Status Register.</span><br><span class="line">// We model fpscr with two registers: FPSCR models the control bits and will be</span><br><span class="line">// reserved. FPSCR_NZCV models the flag bits and will be unreserved. APSR_NZCV</span><br><span class="line">// models the APSR when it&apos;s accessed by some special instructions. In such cases</span><br><span class="line">// it has the same encoding as PC.</span><br><span class="line">def CPSR       : ARMReg&lt;0,  &quot;cpsr&quot;&gt;;</span><br><span class="line">def APSR       : ARMReg&lt;15, &quot;apsr&quot;&gt;;</span><br><span class="line">def APSR_NZCV  : ARMReg&lt;15, &quot;apsr_nzcv&quot;&gt;;</span><br><span class="line">def SPSR       : ARMReg&lt;2,  &quot;spsr&quot;&gt;;</span><br><span class="line">def FPSCR      : ARMReg&lt;3,  &quot;fpscr&quot;&gt;;</span><br><span class="line">def FPSCR_NZCV : ARMReg&lt;3,  &quot;fpscr_nzcv&quot;&gt; &#123;</span><br><span class="line">  let Aliases = [FPSCR];</span><br><span class="line">&#125;</span><br><span class="line">def ITSTATE    : ARMReg&lt;4, &quot;itstate&quot;&gt;;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>唯一可以注意的是，为了一些操作方便，这里对于NZCV的flags做了alias的定义。</p>
+<h2 id="3-3-定义RegisterClass"><a href="#3-3-定义RegisterClass" class="headerlink" title="3.3. 定义RegisterClass"></a>3.3. 定义RegisterClass</h2><p>随后需要告诉LLVM如何使用这些寄存器，或者说哪些寄存器是一类的。比如，对于通用寄存器的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">def GPR : RegisterClass&lt;&quot;ARM&quot;, [i32], 32, (add (sequence &quot;R%u&quot;, 0, 12),</span><br><span class="line">                                               SP, LR, PC)&gt; &#123;</span><br><span class="line">  // Allocate LR as the first CSR since it is always saved anyway.</span><br><span class="line">  // For Thumb1 mode, we don&apos;t want to allocate hi regs at all, as we don&apos;t</span><br><span class="line">  // know how to spill them. If we make our prologue/epilogue code smarter at</span><br><span class="line">  // some point, we can go back to using the above allocation orders for the</span><br><span class="line">  // Thumb1 instructions that know how to use hi regs.</span><br><span class="line">  let AltOrders = [(add LR, GPR), (trunc GPR, 8),</span><br><span class="line">                   (add (trunc GPR, 8), R12, LR, (shl GPR, 8))];</span><br><span class="line">  let AltOrderSelect = [&#123;</span><br><span class="line">      return MF.getSubtarget&lt;ARMSubtarget&gt;().getGPRAllocationOrder(MF);</span><br><span class="line">  &#125;];</span><br><span class="line">  let DiagnosticString = &quot;operand must be a register in range [r0, r15]&quot;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// GPRs without the PC.  Some ARM instructions do not allow the PC in</span><br><span class="line">// certain operand slots, particularly as the destination.  Primarily</span><br><span class="line">// useful for disassembly.</span><br><span class="line">def GPRnopc : RegisterClass&lt;&quot;ARM&quot;, [i32], 32, (sub GPR, PC)&gt; &#123;</span><br><span class="line">  let AltOrders = [(add LR, GPRnopc), (trunc GPRnopc, 8),</span><br><span class="line">                   (add (trunc GPRnopc, 8), R12, LR, (shl GPRnopc, 8))];</span><br><span class="line">  let AltOrderSelect = [&#123;</span><br><span class="line">      return MF.getSubtarget&lt;ARMSubtarget&gt;().getGPRAllocationOrder(MF);</span><br><span class="line">  &#125;];</span><br><span class="line">  let DiagnosticString = &quot;operand must be a register in range [r0, r14]&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里定义了：</p>
+<ul>
+<li>class包含了哪些寄存器</li>
+<li>选择的顺序</li>
+<li>diagnostic信息</li>
+</ul>
+<h1 id="4-LLVM-ARMv8-Register"><a href="#4-LLVM-ARMv8-Register" class="headerlink" title="4. LLVM ARMv8 Register"></a>4. LLVM ARMv8 Register</h1><p>ARMv8的通用寄存器升级到了64bit，包含了</p>
+<ul>
+<li>X0-X31, 最后三个为FR,LR,SR,XZR<ul>
+<li>sub-register：所有X寄存器的低32bit定义为：W0-W31，最后两个为WSP,WZR</li>
+</ul>
+</li>
+<li>V0-V31, 类似于ARMv7中的Q0-Q31, 增加了一倍的浮点寄存器<ul>
+<li>d,s和ARMv7一致，额外增加了8bit的b类型寄存器</li>
+<li>v是用来引用新增的vector model的。</li>
+</ul>
+</li>
+</ul>
+<p>EFLAGS被单独移出去了，更加详细控制寄存器信息，等到对应的命令时候再描述。</p>
+<h2 id="4-1-通用寄存器定义"><a href="#4-1-通用寄存器定义" class="headerlink" title="4.1. 通用寄存器定义"></a>4.1. 通用寄存器定义</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">def W0    : AArch64Reg&lt;0,   &quot;w0&quot; &gt;, DwarfRegNum&lt;[0]&gt;;</span><br><span class="line">def W1    : AArch64Reg&lt;1,   &quot;w1&quot; &gt;, DwarfRegNum&lt;[1]&gt;;</span><br><span class="line">def W2    : AArch64Reg&lt;2,   &quot;w2&quot; &gt;, DwarfRegNum&lt;[2]&gt;;</span><br><span class="line">def W3    : AArch64Reg&lt;3,   &quot;w3&quot; &gt;, DwarfRegNum&lt;[3]&gt;;</span><br><span class="line">def W4    : AArch64Reg&lt;4,   &quot;w4&quot; &gt;, DwarfRegNum&lt;[4]&gt;;</span><br><span class="line">def W5    : AArch64Reg&lt;5,   &quot;w5&quot; &gt;, DwarfRegNum&lt;[5]&gt;;</span><br><span class="line">...</span><br><span class="line">def W28   : AArch64Reg&lt;28, &quot;w28&quot;&gt;, DwarfRegNum&lt;[28]&gt;;</span><br><span class="line">def W29   : AArch64Reg&lt;29, &quot;w29&quot;&gt;, DwarfRegNum&lt;[29]&gt;;</span><br><span class="line">def W30   : AArch64Reg&lt;30, &quot;w30&quot;&gt;, DwarfRegNum&lt;[30]&gt;;</span><br><span class="line">def WSP   : AArch64Reg&lt;31, &quot;wsp&quot;&gt;, DwarfRegNum&lt;[31]&gt;;</span><br><span class="line">def WZR   : AArch64Reg&lt;31, &quot;wzr&quot;&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [sub_32] in &#123;</span><br><span class="line">def X0    : AArch64Reg&lt;0,   &quot;x0&quot;,  [W0]&gt;, DwarfRegAlias&lt;W0&gt;;</span><br><span class="line">def X1    : AArch64Reg&lt;1,   &quot;x1&quot;,  [W1]&gt;, DwarfRegAlias&lt;W1&gt;;</span><br><span class="line">def X2    : AArch64Reg&lt;2,   &quot;x2&quot;,  [W2]&gt;, DwarfRegAlias&lt;W2&gt;;</span><br><span class="line">def X3    : AArch64Reg&lt;3,   &quot;x3&quot;,  [W3]&gt;, DwarfRegAlias&lt;W3&gt;;</span><br><span class="line">def X4    : AArch64Reg&lt;4,   &quot;x4&quot;,  [W4]&gt;, DwarfRegAlias&lt;W4&gt;;</span><br><span class="line">def X5    : AArch64Reg&lt;5,   &quot;x5&quot;,  [W5]&gt;, DwarfRegAlias&lt;W5&gt;;</span><br><span class="line">...</span><br><span class="line">def X24   : AArch64Reg&lt;24, &quot;x24&quot;, [W24]&gt;, DwarfRegAlias&lt;W24&gt;;</span><br><span class="line">def X28   : AArch64Reg&lt;28, &quot;x28&quot;, [W28]&gt;, DwarfRegAlias&lt;W28&gt;;</span><br><span class="line">def FP    : AArch64Reg&lt;29, &quot;x29&quot;, [W29]&gt;, DwarfRegAlias&lt;W29&gt;;</span><br><span class="line">def LR    : AArch64Reg&lt;30, &quot;x30&quot;, [W30]&gt;, DwarfRegAlias&lt;W30&gt;;</span><br><span class="line">def SP    : AArch64Reg&lt;31, &quot;sp&quot;,  [WSP]&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line">def XZR   : AArch64Reg&lt;31, &quot;xzr&quot;, [WZR]&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>没有什么特别的。</p>
+<h2 id="4-2-SIMD-amp-FP寄存器"><a href="#4-2-SIMD-amp-FP寄存器" class="headerlink" title="4.2. SIMD &amp; FP寄存器"></a>4.2. SIMD &amp; FP寄存器</h2><p>普通的定义没有什么特别，只是加了一个b寄存器。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">def B0    : AArch64Reg&lt;0,   &quot;b0&quot;&gt;, DwarfRegNum&lt;[64]&gt;;</span><br><span class="line">...</span><br><span class="line">def B31   : AArch64Reg&lt;31, &quot;b31&quot;&gt;, DwarfRegNum&lt;[95]&gt;;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [bsub] in &#123;</span><br><span class="line">def H0    : AArch64Reg&lt;0,   &quot;h0&quot;, [B0]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def H31   : AArch64Reg&lt;31, &quot;h31&quot;, [B31]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [hsub] in &#123;</span><br><span class="line">def S0    : AArch64Reg&lt;0,   &quot;s0&quot;, [H0]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def S31   : AArch64Reg&lt;31, &quot;s31&quot;, [H31]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [ssub], RegAltNameIndices = [vreg, vlist1] in &#123;</span><br><span class="line">def D0    : AArch64Reg&lt;0,   &quot;d0&quot;, [S0], [&quot;v0&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def D31   : AArch64Reg&lt;31, &quot;d31&quot;, [S31], [&quot;v31&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [dsub], RegAltNameIndices = [vreg, vlist1] in &#123;</span><br><span class="line">def Q0    : AArch64Reg&lt;0,   &quot;q0&quot;, [D0], [&quot;v0&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def Q31   : AArch64Reg&lt;31, &quot;q31&quot;, [D31], [&quot;v31&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>SubRegisterIndex定义不再赘述。注意这里sub-register再一个parent-register没有两个了，因为通用寄存器本身翻倍了。</p>
+<h2 id="4-3-Register-Vector定义"><a href="#4-3-Register-Vector定义" class="headerlink" title="4.3. Register Vector定义"></a>4.3. Register Vector定义</h2><p>有意思的是LLVM是如何定义ARMv8中的vector value的使用的。</p>
+<p>首先需要看到的是LLVM对于value type的定义，在LLVM/include/Target/ValueTypes.td中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">def v8i16  : ValueType&lt;128, 38&gt;;   //  8 x i16 vector value</span><br><span class="line">def v16i16 : ValueType&lt;256, 39&gt;;   // 16 x i16 vector value</span><br><span class="line">def v32i16 : ValueType&lt;512, 40&gt;;   // 32 x i16 vector value</span><br><span class="line">def v64i16 : ValueType&lt;1024,41&gt;;   // 64 x i16 vector value</span><br><span class="line">def v128i16: ValueType&lt;2048,42&gt;;   //128 x i16 vector value</span><br><span class="line"></span><br><span class="line">def v1i32    : ValueType&lt;32 , 43&gt;;   //  1 x i32 vector value</span><br><span class="line">def v2i32    : ValueType&lt;64 , 44&gt;;   //  2 x i32 vector value</span><br><span class="line">def v3i32    : ValueType&lt;96 , 45&gt;;   //  3 x i32 vector value</span><br><span class="line">def v4i32    : ValueType&lt;128, 46&gt;;   //  4 x i32 vector value</span><br><span class="line">def v5i32    : ValueType&lt;160, 47&gt;;   //  5 x i32 vector value</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>这些ValueType会被用在定义RegisterClass时候：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">def FPR64 : RegisterClass&lt;&quot;AArch64&quot;, [f64, i64, v2f32, v1f64, v8i8, v4i16, v2i32,</span><br><span class="line">                                    v1i64, v4f16],</span><br><span class="line">                                    64, (sequence &quot;D%u&quot;, 0, 31)&gt;;</span><br><span class="line">// We don&apos;t (yet) have an f128 legal type, so don&apos;t use that here. We</span><br><span class="line">// normalize 128-bit vectors to v2f64 for arg passing and such, so use</span><br><span class="line">// that here.</span><br><span class="line">def FPR128 : RegisterClass&lt;&quot;AArch64&quot;,</span><br><span class="line">                           [v16i8, v8i16, v4i32, v2i64, v4f32, v2f64, f128,</span><br><span class="line">                            v8f16],</span><br><span class="line">                           128, (sequence &quot;Q%u&quot;, 0, 31)&gt;;</span><br><span class="line">// The lower 16 vector registers.  Some instructions can only take registers</span><br><span class="line">// in this range.</span><br><span class="line">def FPR128_lo : RegisterClass&lt;&quot;AArch64&quot;,</span><br><span class="line">                              [v16i8, v8i16, v4i32, v2i64, v4f32, v2f64, v8f16],</span><br><span class="line">                              128, (trunc FPR128, 16)&gt;;</span><br></pre></td></tr></table></figure>
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://yoursite.com">Leo Zhou</a>
+            <p>原文链接：<a href="http://yoursite.com/2019/11/14/ARM-Register-Quick-View/">http://yoursite.com/2019/11/14/ARM-Register-Quick-View/</a>
+            <p>发表日期：<a href="http://yoursite.com/2019/11/14/ARM-Register-Quick-View/">November 14th 2019, 5:23:35 pm</a>
+            <p>更新日期：<a href="http://yoursite.com/2019/11/14/ARM-Register-Quick-View/">November 16th 2019, 8:51:21 pm</a>
+            <p>版权声明：本文采用<a rel="license noopener" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2019/11/12/%E6%95%B0%E6%8D%AE%E5%AF%86%E9%9B%86%E5%9E%8B%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0-%E7%AC%AC%E4%B8%80%E7%AB%A0/" title= "野猪书第一章读书笔记">
+                    <div class="prevTitle">野猪书第一章读书笔记</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:july24lynna@gmail.com" target="_blank" rel="noopener" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="https://github.com/tinytinymelon" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/example_qr.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-指令"><span class="toc-number">1.</span> <span class="toc-text">1. 指令</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-ARM-Profile"><span class="toc-number">2.</span> <span class="toc-text">2. ARM Profile</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-LLVM-ARMv7-Register"><span class="toc-number">3.</span> <span class="toc-text">3. LLVM ARMv7 Register</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-通用寄存器定义"><span class="toc-number">3.1.</span> <span class="toc-text">3.1. 通用寄存器定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-控制寄存器的定义"><span class="toc-number">3.2.</span> <span class="toc-text">3.2. 控制寄存器的定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-定义RegisterClass"><span class="toc-number">3.3.</span> <span class="toc-text">3.3. 定义RegisterClass</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-LLVM-ARMv8-Register"><span class="toc-number">4.</span> <span class="toc-text">4. LLVM ARMv8 Register</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-通用寄存器定义"><span class="toc-number">4.1.</span> <span class="toc-text">4.1. 通用寄存器定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-SIMD-amp-FP寄存器"><span class="toc-number">4.2.</span> <span class="toc-text">4.2. SIMD &amp; FP寄存器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-Register-Vector定义"><span class="toc-number">4.3.</span> <span class="toc-text">4.3. Register Vector定义</span></a></li></ol></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 2
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/14</span><a class="archive-post-title" href= "/2019/11/14/ARM-Register-Quick-View/" >ARM ISA Overview</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/12</span><a class="archive-post-title" href= "/2019/11/12/%E6%95%B0%E6%8D%AE%E5%AF%86%E9%9B%86%E5%9E%8B%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0-%E7%AC%AC%E4%B8%80%E7%AB%A0/" >野猪书第一章读书笔记</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
+    
+        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
+    
+        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Leo Zhou"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+
