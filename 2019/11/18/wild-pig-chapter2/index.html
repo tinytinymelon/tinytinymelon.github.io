@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Leo Zhou">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Leo Zhou">
+    
+    <meta name="keywords" content="big data,spark,llvm,micro">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>野猪书第二章读书笔记 · Tiny Tiny Melon</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon_tree.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+</head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >Tiny Tiny Melon</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">野猪书第二章读书笔记</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>Tiny Tiny Melon</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            野猪书第二章读书笔记
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">1.6k</span>Reading time: <span class="post-count reading-time">7 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2019/11/18</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h3 id="1-模型"><a href="#1-模型" class="headerlink" title="1. 模型"></a>1. 模型</h3><ul>
+<li>层次化模型(hierachy)<ul>
+<li>树状结构 -&gt; keep one-to-many or many-to-one</li>
+<li>no many-to-many</li>
+</ul>
+</li>
+<li>关系化模型 -&gt; sql<ul>
+<li>范式</li>
+<li>在复杂的或者多层的one-to-many结构中需要拆成多张表</li>
+</ul>
+</li>
+<li>文档化模型(document) -&gt; json<ul>
+<li>一列中可以保存复杂结构的数据</li>
+<li>比如列表形式的历史记录</li>
+<li>对于不复杂的one-to-many特别适合</li>
+<li>但是对于many-to-many不是那么有优势</li>
+<li>join不是那么友好，许多数据库都不支持join</li>
+</ul>
+</li>
+<li>网络化模型(network)<ul>
+<li>图状结构,many-to-many</li>
+<li>搜索和优化变得困难</li>
+<li>图计算数据库</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-存储模型"><a href="#2-存储模型" class="headerlink" title="2. 存储模型"></a>2. 存储模型</h3><p>规格化的（normalized): 所有重复的数值(主要是string)会被应设成id</p>
+<ul>
+<li>统一的格式和语法</li>
+<li>避免歧义</li>
+<li>i18n的时候分离了显示和存储要求，更加方便迁移</li>
+<li>更快的search</li>
+<li>[坏处]规格化的数据需要多张表，search时候需要更加多的join</li>
+</ul>
+<p>非规格化的(denormalized):</p>
+<ul>
+<li>如果数据库本身不支持join</li>
+<li>可能对于cache hit更加友好</li>
+</ul>
+<h3 id="3-schema设计"><a href="#3-schema设计" class="headerlink" title="3. schema设计"></a>3. schema设计</h3><ul>
+<li>读时schema模式（所谓无模式）：在读的时候检查需要的shchema是否合理</li>
+<li>写时schema模式，在写的时候做检查，否则不让写入</li>
+</ul>
+<p>实际上会是混合模式，写时会做一部分，读的时候做一部分。</p>
+<p>这些设计在column发生修改时候变的有所不同。</p>
+<ul>
+<li>读时schema可能只需要写入新的field的值就可以了：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">if (user &amp;&amp; user.name &amp;&amp; !user.first_name) &#123;</span><br><span class="line">    user.first_name = user.name.split(&quot; &quot;)[0]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>写时schema需要更新数据库table的schema</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ALTER TABLE users ADD COLUMN first_name text;</span><br><span class="line">UPDATE users SET first_name = split_part(name, &quot; &quot;, 1);    -- PostgreSQL</span><br><span class="line">UPDATE users SET first_name = substring_index(name, &quot; &quot;, 1);   -- MySQL</span><br></pre></td></tr></table></figure>
+
+<p>schema的更新(ALTER)是件代价不小的操作，另外UPDATE操作对于大表和有复杂关联的表系列也有不小的代价。一般而言可以将新加入的field设置为NULL，在读的时候进行设置。</p>
+<p>所以在这种情况下，如果数据中包含了不一致的schema结构（数据异构），例如：</p>
+<ul>
+<li>有许多的数据格式</li>
+<li>数据系统的schema结构不稳定，会发生变动</li>
+</ul>
+<h3 id="4-查询的局部性"><a href="#4-查询的局部性" class="headerlink" title="4. 查询的局部性"></a>4. 查询的局部性</h3><ul>
+<li>分成多张表的数据存储格式在读取连续数据时候会有一定的性能影响，需要多次索引</li>
+<li>修改数据时候，最好的是原地覆盖，因此建议写入的文档尽量小，并且不增加数据大小</li>
+<li>所以，为了提高局部性，可以<ul>
+<li>父表内嵌入子表数据（类似json）</li>
+<li>多索引集群表</li>
+<li>列式存储，列簇</li>
+</ul>
+</li>
+</ul>
+<h3 id="5-数据查询语言"><a href="#5-数据查询语言" class="headerlink" title="5. 数据查询语言"></a>5. 数据查询语言</h3><ul>
+<li>声明式：比如SQL，只是给出了我想要什么，给出范围，但是没有给出具体的操作流程</li>
+<li>命令式：定义为完整的操作流程，执行的命令。</li>
+</ul>
+<p>声明式隔离了底层的实现逻辑，使得：</p>
+<ul>
+<li>API变的简洁和容易理解</li>
+<li>提供优化的机会</li>
+<li>提供并行执行的实现方式</li>
+</ul>
+<h3 id="6-图状数据库"><a href="#6-图状数据库" class="headerlink" title="6. 图状数据库"></a>6. 图状数据库</h3><ul>
+<li>基本组成”顶点” + “边”。</li>
+<li>相关算法：导航，PageRank</li>
+</ul>
+<p>图状数据库模型：</p>
+<ul>
+<li>属性图（property graph）<ul>
+<li>Neon4j, Titan和InfiniteGraph </li>
+</ul>
+</li>
+<li>三元存储模型（triple-store）<ul>
+<li>Datomic, AllegroGraph</li>
+</ul>
+</li>
+</ul>
+<p>查询语句</p>
+<ul>
+<li>声明式查询语句：Cypher, SPARQL, Datalog</li>
+<li>命令式查询语句：Gremlin</li>
+<li>图处理框架: Pregel</li>
+</ul>
+<h4 id="6-1-属性图"><a href="#6-1-属性图" class="headerlink" title="6.1. 属性图"></a>6.1. 属性图</h4><p>在属性图模型中，一个顶点包含了：</p>
+<ul>
+<li>UUID</li>
+<li>Input/Output edge list</li>
+<li>property set (key-value pair)</li>
+</ul>
+<p>一个边包含了：</p>
+<ul>
+<li>UUID</li>
+<li>edage start/end node</li>
+<li>label describe relationship between start node and end node</li>
+<li>property set (key-value pair)</li>
+</ul>
+<p>在完成这些定义后，属性图可以很方便的使用多张关系数据库表来进行存储</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> vertices (</span><br><span class="line"> vertex_id <span class="built_in">integer</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line"> properties <span class="keyword">json</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> edges (</span><br><span class="line"> edge_id <span class="built_in">integer</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line"> tail_vertex <span class="built_in">integer</span> <span class="keyword">REFERENCES</span> vertices (vertex_id),</span><br><span class="line"> head_vertex <span class="built_in">integer</span> <span class="keyword">REFERENCES</span> vertices (vertex_id),</span><br><span class="line"> label <span class="built_in">text</span>,</span><br><span class="line"> properties <span class="keyword">json</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> edges_tails <span class="keyword">ON</span> edges (tail_vertex);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> edges_heads <span class="keyword">ON</span> edges (head_vertex);</span><br></pre></td></tr></table></figure>
+
+<p>属性图提供了非常强大的灵活性来描述一张图的结构。</p>
+<h4 id="6-2-Cypher"><a href="#6-2-Cypher" class="headerlink" title="6.2. Cypher"></a>6.2. Cypher</h4><p>基本思路是定义一个节点或者一条边需要满足的条件，查询的具体细节不关注，比如，我们想要查询这一样一个节点（人）：</p>
+<ul>
+<li>person，通过节点label为BORN_IN的outgoing edge，以及系列WITH_IN outgoing edage，最终抵达某个标注为US的节点</li>
+<li>person，通过节点label为LIVES_IN的outgoing edge，以及系列WITH_IN outgoing edage，抵达某个标注为US的节点</li>
+</ul>
+<p>最后打印出来person的名字：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MATCH</span><br><span class="line"> (person) -[:BORN_IN]-&gt; () -[:WITHIN*0..]-&gt; (us:Location &#123;name:&apos;United States&apos;&#125;),</span><br><span class="line"> (person) -[:LIVES_IN]-&gt; () -[:WITHIN*0..]-&gt; (eu:Location &#123;name:&apos;Europe&apos;&#125;)</span><br><span class="line">RETURN person.name</span><br></pre></td></tr></table></figure>
+
+<p>如果用SQL来做，会成多次的表的join。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">WITH</span> <span class="keyword">RECURSIVE</span></span><br><span class="line"></span><br><span class="line"> <span class="comment">-- in_usa is the set of vertex IDs of all locations within the United States</span></span><br><span class="line"> in_usa(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> vertex_id <span class="keyword">FROM</span> vertices <span class="keyword">WHERE</span> properties-&gt;&gt;<span class="string">'name'</span> = <span class="string">'United States'</span></span><br><span class="line"> <span class="keyword">UNION</span></span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_usa <span class="keyword">ON</span> edges.head_vertex = in_usa.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'within'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- in_europe is the set of vertex IDs of all locations within Europe</span></span><br><span class="line"> in_europe(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> vertex_id <span class="keyword">FROM</span> vertices <span class="keyword">WHERE</span> properties-&gt;&gt;<span class="string">'name'</span> = <span class="string">'Europe'</span></span><br><span class="line"> <span class="keyword">UNION</span></span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_europe <span class="keyword">ON</span> edges.head_vertex = in_europe.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'within'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- born_in_usa is the set of vertex IDs of all people born in the US</span></span><br><span class="line"> born_in_usa(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_usa <span class="keyword">ON</span> edges.head_vertex = in_usa.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'born_in'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- lives_in_europe is the set of vertex IDs of all people living in Europe</span></span><br><span class="line"> lives_in_europe(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_europe <span class="keyword">ON</span> edges.head_vertex = in_europe.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'lives_in'</span></span><br><span class="line"> )</span><br><span class="line"> </span><br><span class="line"><span class="keyword">SELECT</span> vertices.properties-&gt;&gt;<span class="string">'name'</span></span><br><span class="line"><span class="keyword">FROM</span> vertices</span><br><span class="line"><span class="comment">-- join to find those people who were both born in the US *and* live in Europe</span></span><br><span class="line"><span class="keyword">JOIN</span> born_in_usa <span class="keyword">ON</span> vertices.vertex_id = born_in_usa.vertex_id</span><br><span class="line"><span class="keyword">JOIN</span> lives_in_europe <span class="keyword">ON</span> vertices.vertex_id = lives_in_europe.vertex_id;</span><br></pre></td></tr></table></figure>
+
+<h4 id="6-3-三元存储模型（triple-store）"><a href="#6-3-三元存储模型（triple-store）" class="headerlink" title="6.3. 三元存储模型（triple-store）"></a>6.3. 三元存储模型（triple-store）</h4><p>三元存储模型和属性图类似，但是颗粒度更加细。所有的描述都是一个三维的tuple： (subject, predicate, object).</p>
+<ul>
+<li>subject一定是某个节点</li>
+<li>predicate是一个edge或者一个属性</li>
+<li>object可以是一个节点（edge）或者一个属性值（属性）</li>
+</ul>
+<p>比如，可以这样来描述一张图：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@prefix : &lt;urn:example:&gt;.</span><br><span class="line">_:lucy a :Person.</span><br><span class="line">_:lucy :name &quot;Lucy&quot;.</span><br><span class="line">_:lucy :bornIn _:idaho.</span><br><span class="line">_:idaho a :Location.</span><br><span class="line">_:idaho :name &quot;Idaho&quot;.</span><br><span class="line">_:idaho :type &quot;state&quot;.</span><br><span class="line">_:idaho :within _:usa.</span><br><span class="line">_:usa a :Location.</span><br><span class="line">_:usa :name &quot;United States&quot;.</span><br><span class="line">_:usa :type &quot;country&quot;.</span><br><span class="line">_:usa :within _:namerica.</span><br><span class="line">_:namerica a :Location.</span><br><span class="line">_:namerica :name &quot;North America&quot;.</span><br><span class="line">_:namerica :type &quot;continent&quot;.</span><br></pre></td></tr></table></figure>
+
+<p>可以压缩一下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@prefix : &lt;urn:example:&gt;.</span><br><span class="line">_:lucy a :Person; :name &quot;Lucy&quot;; :bornIn _:idaho.</span><br><span class="line">_:idaho a :Location; :name &quot;Idaho&quot;; :type &quot;state&quot;; :within _:usa.</span><br><span class="line">_:usa a :Location; :name &quot;United States&quot;; :type &quot;country&quot;; :within _:namerica.</span><br><span class="line">_:namerica a :Location; :name &quot;North America&quot;; :type &quot;continent&quot;.</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-其他模型"><a href="#7-其他模型" class="headerlink" title="7. 其他模型"></a>7. 其他模型</h3><ul>
+<li>针对DNA（只有四个值）的基因组数据，GenBank</li>
+<li>针对海量数据数据库</li>
+<li>针对全文搜索的数据库</li>
+</ul>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://yoursite.com">Leo Zhou</a>
+            <p>原文链接：<a href="http://yoursite.com/2019/11/18/wild-pig-chapter2/">http://yoursite.com/2019/11/18/wild-pig-chapter2/</a>
+            <p>发表日期：<a href="http://yoursite.com/2019/11/18/wild-pig-chapter2/">November 18th 2019, 4:33:11 pm</a>
+            <p>更新日期：<a href="http://yoursite.com/2019/11/18/wild-pig-chapter2/">November 18th 2019, 4:34:25 pm</a>
+            <p>版权声明：本文采用<a rel="license noopener" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/" title= "RISC-V 寄存器 overview">
+                    <div class="prevTitle">RISC-V 寄存器 overview</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:july24lynna@gmail.com" target="_blank" rel="noopener" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="https://github.com/tinytinymelon" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/example_qr.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-模型"><span class="toc-number">1.</span> <span class="toc-text">1. 模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-存储模型"><span class="toc-number">2.</span> <span class="toc-text">2. 存储模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-schema设计"><span class="toc-number">3.</span> <span class="toc-text">3. schema设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-查询的局部性"><span class="toc-number">4.</span> <span class="toc-text">4. 查询的局部性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-数据查询语言"><span class="toc-number">5.</span> <span class="toc-text">5. 数据查询语言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-图状数据库"><span class="toc-number">6.</span> <span class="toc-text">6. 图状数据库</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1-属性图"><span class="toc-number">6.1.</span> <span class="toc-text">6.1. 属性图</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2-Cypher"><span class="toc-number">6.2.</span> <span class="toc-text">6.2. Cypher</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-3-三元存储模型（triple-store）"><span class="toc-number">6.3.</span> <span class="toc-text">6.3. 三元存储模型（triple-store）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-其他模型"><span class="toc-number">7.</span> <span class="toc-text">7. 其他模型</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 4
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/18</span><a class="archive-post-title" href= "/2019/11/18/wild-pig-chapter2/" >野猪书第二章读书笔记</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/17</span><a class="archive-post-title" href= "/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/" >RISC-V 寄存器 overview</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/14</span><a class="archive-post-title" href= "/2019/11/14/ARM-Register-Quick-View/" >ARM ISA Overview</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/12</span><a class="archive-post-title" href= "/2019/11/12/wild-pig-chapter1/" >野猪书第一章读书笔记</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
+    
+        <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
+    
+        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
+    
+        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
+    
+        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Leo Zhou"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+
