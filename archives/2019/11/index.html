@@ -346,6 +346,38 @@
     
     
     <article class="index-post">
+        <a class="abstract-title" href = "/2019/11/18/RSIC-V-RV32I-Instruction-Set/" >
+            
+                <span>RSIC-V RV32I Instruction Set</span>
+        </a>
+        <div class="abstract-content">
+            1. Instruction LengthRISC-V指令是定长的32bit，但是拓展可以支持变长。变长一定是16bit的整数倍。
+encoding convension要求所有32bit指令长度的命令最低两位一定是11. 注意RISC-V是小端的指令集。对于&gt;32bit长度的指令格式，同样要求满足这个要求，因此对于16bit指令长度，要求最低两位一定不是11。
+当然对于non-standard指令格式，RISC-V可以是大端的。 
+2. RV32IRV32I是最基础的指令集，也是任何RISC-V实现必须实现的指令集。RV32I包括了47条独特指令，另外，实现可以选择使用总是tra...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/18</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro,RISC-V,ISA">Micro,RISC-V,ISA</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
         <a class="abstract-title" href = "/2019/11/18/wild-pig-chapter2/" >
             
                 <span>野猪书第二章读书笔记</span>
@@ -654,9 +686,18 @@ AA...
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 4
+        Total : 5
         </div>
         <!-- search  -->
         
@@ -669,6 +710,11 @@ AA...
     
     <div class="archive-year"> 2019 </div>
     <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/18</span><a class="archive-post-title" href= "/2019/11/18/RSIC-V-RV32I-Instruction-Set/" >RSIC-V RV32I Instruction Set</a>
+        </li>
     
     
         <li class="archive-post-item">
@@ -695,15 +741,17 @@ AA...
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
-    
-        <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
-    
         <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
     
         <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
     
         <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
+    
+        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
+    
+        <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
+    
+        <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
     
     </div>
     <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
