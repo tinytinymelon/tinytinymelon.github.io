@@ -346,26 +346,58 @@
     
     
     <article class="index-post">
-        <a class="abstract-title" href = "/2019/11/18/RSIC-V-RV32I-Instruction-Set/" >
+        <a class="abstract-title" href = "/2019/11/21/wild-pig-chapter3/" >
             
-                <span>RSIC-V RV32I Instruction Set</span>
+                <span>野猪书第三章读书笔记</span>
         </a>
         <div class="abstract-content">
-            1. Instruction LengthRISC-V指令是定长的32bit，但是拓展可以支持变长。变长一定是16bit的整数倍。
-encoding convension要求所有32bit指令长度的命令最低两位一定是11. 注意RISC-V是小端的指令集。对于&gt;32bit长度的指令格式，同样要求满足这个要求，因此对于16bit指令长度，要求最低两位一定不是11。
-当然对于non-standard指令格式，RISC-V可以是大端的。 
-2. RV32IRV32I是最基础的指令集，也是任何RISC-V实现必须实现的指令集。RV32I包括了47条独特指令，另外，实现可以选择使用总是tra...
+            1. overview数据库分类
+
+事务处理型
+数据分析型
+
+存储索引家族：
+
+日志结构的存储引擎
+面向页的存储引擎，比如b-tree
+
+2. 哈希表索引核心：将key hash到对应的文件位置
+
+使用日志方式，不修改已有记录，在末尾增加
+如果能够保持key在内存中，那么写入速度会很快
+
+
+将日志分段，到一定大小，生成新的段
+在合适时机进行段合并，只保留最新的结果
+使用后台线程，在完成合并之前使用老的index
+合并之后切换到新的index，删除老的index
+
+
+最终，每一个段都会有自己的索引（注意，可能有多个段）
+搜索需要从最新的段开始往前找索引表
+
+
+
+在实现中还需要考虑：
+
+文件...
         </div>
         <div class="abstract-post-meta">
             <!-- date  -->
             <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/18</span>
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/21</span>
             </div>
             <!-- tags  -->
             
             <div class= abstract-tags >
     
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro,RISC-V,ISA">Micro,RISC-V,ISA</a>
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Storage">Storage</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "数据库">数据库</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "系统设计">系统设计</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "索引">索引</a>
     
 </div>
             
