@@ -444,12 +444,10 @@ height:50vh;
 <li>读时schema可能只需要写入新的field的值就可以了：</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">if (user &amp;&amp; user.name &amp;&amp; !user.first_name) &#123;</span><br><span class="line">    user.first_name = user.name.split(&quot; &quot;)[0]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>写时schema需要更新数据库table的schema</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ALTER TABLE users ADD COLUMN first_name text;</span><br><span class="line">UPDATE users SET first_name = split_part(name, &quot; &quot;, 1);    -- PostgreSQL</span><br><span class="line">UPDATE users SET first_name = substring_index(name, &quot; &quot;, 1);   -- MySQL</span><br></pre></td></tr></table></figure>
-
 <p>schema的更新(ALTER)是件代价不小的操作，另外UPDATE操作对于大表和有复杂关联的表系列也有不小的代价。一般而言可以将新加入的field设置为NULL，在读的时候进行设置。</p>
 <p>所以在这种情况下，如果数据中包含了不一致的schema结构（数据异构），例如：</p>
 <ul>
@@ -512,7 +510,6 @@ height:50vh;
 </ul>
 <p>在完成这些定义后，属性图可以很方便的使用多张关系数据库表来进行存储</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> vertices (</span><br><span class="line"> vertex_id <span class="built_in">integer</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line"> properties <span class="keyword">json</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> edges (</span><br><span class="line"> edge_id <span class="built_in">integer</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line"> tail_vertex <span class="built_in">integer</span> <span class="keyword">REFERENCES</span> vertices (vertex_id),</span><br><span class="line"> head_vertex <span class="built_in">integer</span> <span class="keyword">REFERENCES</span> vertices (vertex_id),</span><br><span class="line"> label <span class="built_in">text</span>,</span><br><span class="line"> properties <span class="keyword">json</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> edges_tails <span class="keyword">ON</span> edges (tail_vertex);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> edges_heads <span class="keyword">ON</span> edges (head_vertex);</span><br></pre></td></tr></table></figure>
-
 <p>属性图提供了非常强大的灵活性来描述一张图的结构。</p>
 <h4 id="6-2-Cypher"><a href="#6-2-Cypher" class="headerlink" title="6.2. Cypher"></a>6.2. Cypher</h4><p>基本思路是定义一个节点或者一条边需要满足的条件，查询的具体细节不关注，比如，我们想要查询这一样一个节点（人）：</p>
 <ul>
@@ -521,10 +518,8 @@ height:50vh;
 </ul>
 <p>最后打印出来person的名字：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MATCH</span><br><span class="line"> (person) -[:BORN_IN]-&gt; () -[:WITHIN*0..]-&gt; (us:Location &#123;name:&apos;United States&apos;&#125;),</span><br><span class="line"> (person) -[:LIVES_IN]-&gt; () -[:WITHIN*0..]-&gt; (eu:Location &#123;name:&apos;Europe&apos;&#125;)</span><br><span class="line">RETURN person.name</span><br></pre></td></tr></table></figure>
-
 <p>如果用SQL来做，会成多次的表的join。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">WITH</span> <span class="keyword">RECURSIVE</span></span><br><span class="line"></span><br><span class="line"> <span class="comment">-- in_usa is the set of vertex IDs of all locations within the United States</span></span><br><span class="line"> in_usa(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> vertex_id <span class="keyword">FROM</span> vertices <span class="keyword">WHERE</span> properties-&gt;&gt;<span class="string">'name'</span> = <span class="string">'United States'</span></span><br><span class="line"> <span class="keyword">UNION</span></span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_usa <span class="keyword">ON</span> edges.head_vertex = in_usa.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'within'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- in_europe is the set of vertex IDs of all locations within Europe</span></span><br><span class="line"> in_europe(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> vertex_id <span class="keyword">FROM</span> vertices <span class="keyword">WHERE</span> properties-&gt;&gt;<span class="string">'name'</span> = <span class="string">'Europe'</span></span><br><span class="line"> <span class="keyword">UNION</span></span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_europe <span class="keyword">ON</span> edges.head_vertex = in_europe.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'within'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- born_in_usa is the set of vertex IDs of all people born in the US</span></span><br><span class="line"> born_in_usa(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_usa <span class="keyword">ON</span> edges.head_vertex = in_usa.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'born_in'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- lives_in_europe is the set of vertex IDs of all people living in Europe</span></span><br><span class="line"> lives_in_europe(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_europe <span class="keyword">ON</span> edges.head_vertex = in_europe.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'lives_in'</span></span><br><span class="line"> )</span><br><span class="line"> </span><br><span class="line"><span class="keyword">SELECT</span> vertices.properties-&gt;&gt;<span class="string">'name'</span></span><br><span class="line"><span class="keyword">FROM</span> vertices</span><br><span class="line"><span class="comment">-- join to find those people who were both born in the US *and* live in Europe</span></span><br><span class="line"><span class="keyword">JOIN</span> born_in_usa <span class="keyword">ON</span> vertices.vertex_id = born_in_usa.vertex_id</span><br><span class="line"><span class="keyword">JOIN</span> lives_in_europe <span class="keyword">ON</span> vertices.vertex_id = lives_in_europe.vertex_id;</span><br></pre></td></tr></table></figure>
-
 <h4 id="6-3-三元存储模型（triple-store）"><a href="#6-3-三元存储模型（triple-store）" class="headerlink" title="6.3. 三元存储模型（triple-store）"></a>6.3. 三元存储模型（triple-store）</h4><p>三元存储模型和属性图类似，但是颗粒度更加细。所有的描述都是一个三维的tuple： (subject, predicate, object).</p>
 <ul>
 <li>subject一定是某个节点</li>
@@ -533,10 +528,8 @@ height:50vh;
 </ul>
 <p>比如，可以这样来描述一张图：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@prefix : &lt;urn:example:&gt;.</span><br><span class="line">_:lucy a :Person.</span><br><span class="line">_:lucy :name &quot;Lucy&quot;.</span><br><span class="line">_:lucy :bornIn _:idaho.</span><br><span class="line">_:idaho a :Location.</span><br><span class="line">_:idaho :name &quot;Idaho&quot;.</span><br><span class="line">_:idaho :type &quot;state&quot;.</span><br><span class="line">_:idaho :within _:usa.</span><br><span class="line">_:usa a :Location.</span><br><span class="line">_:usa :name &quot;United States&quot;.</span><br><span class="line">_:usa :type &quot;country&quot;.</span><br><span class="line">_:usa :within _:namerica.</span><br><span class="line">_:namerica a :Location.</span><br><span class="line">_:namerica :name &quot;North America&quot;.</span><br><span class="line">_:namerica :type &quot;continent&quot;.</span><br></pre></td></tr></table></figure>
-
 <p>可以压缩一下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@prefix : &lt;urn:example:&gt;.</span><br><span class="line">_:lucy a :Person; :name &quot;Lucy&quot;; :bornIn _:idaho.</span><br><span class="line">_:idaho a :Location; :name &quot;Idaho&quot;; :type &quot;state&quot;; :within _:usa.</span><br><span class="line">_:usa a :Location; :name &quot;United States&quot;; :type &quot;country&quot;; :within _:namerica.</span><br><span class="line">_:namerica a :Location; :name &quot;North America&quot;; :type &quot;continent&quot;.</span><br></pre></td></tr></table></figure>
-
 <h3 id="7-其他模型"><a href="#7-其他模型" class="headerlink" title="7. 其他模型"></a>7. 其他模型</h3><ul>
 <li>针对DNA（只有四个值）的基因组数据，GenBank</li>
 <li>针对海量数据数据库</li>
@@ -809,17 +802,17 @@ top:50vh;
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
-    
-        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
-    
-        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
-    
         <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
     
         <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
     
         <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
+    
+        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
+    
+        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
+    
+        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
     
         <span class="sidebar-tag-name" data-tags="索引"><span class="iconfont-archer">&#xe606;</span>索引</span>
     
@@ -891,7 +884,22 @@ jsonContent:
     
         <script src="/scripts/share.js" async></script>    
      
-    </body>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>
 
 

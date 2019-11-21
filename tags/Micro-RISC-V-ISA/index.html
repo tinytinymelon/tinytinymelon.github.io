@@ -578,17 +578,17 @@ encoding convension要求所有32bit指令长度的命令最低两位一定是11
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
-    
-        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
-    
-        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
-    
         <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
     
         <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
     
         <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
+    
+        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
+    
+        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
+    
+        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
     
         <span class="sidebar-tag-name" data-tags="索引"><span class="iconfont-archer">&#xe606;</span>索引</span>
     
@@ -658,7 +658,22 @@ jsonContent:
     </div>
     <!-- async load share.js -->
      
-    </body>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>
 
 

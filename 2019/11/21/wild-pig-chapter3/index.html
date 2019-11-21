@@ -495,7 +495,6 @@ height:50vh;
 </ul>
 <p>简单来说，一个M维度的B-Tree节点可以如此描述：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct Node &#123;</span><br><span class="line">    int numberKeys;</span><br><span class="line">    string keys[M - 1];</span><br><span class="line">    object values[M - 1];</span><br><span class="line">    struct Node children[M];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>另外有一些约束来保证B-Tree的搜索性能，对于一棵order为m的树（最多有m个子节点）：</p>
 <ul>
 <li>任何节点如果有k个key，那么就有k+1个ref</li>
@@ -503,9 +502,8 @@ height:50vh;
 <li>每个internal 节点至少有2个子节点（2个ref）</li>
 </ul>
 <p>在这种情况下，整棵树的高度可以限制在(N为key的个数）：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">H = \frac&#123;log_&#123;[m/2]&#125;(N+1)&#125;&#123;2&#125;</span><br></pre></td></tr></table></figure>
-
-<p>注意一棵b树的每个节点既保存key对应的值，又保存了ref的信息。</p>
+<script type="math/tex; mode=display">
+H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保存key对应的值，又保存了ref的信息。</p>
 <h2 id="4-1-B-Tree容错"><a href="#4-1-B-Tree容错" class="headerlink" title="4.1 B-Tree容错"></a>4.1 B-Tree容错</h2><p>B-Tree一般使用预写日志(write-ahead, WAL)，先写日志，再写Tree。</p>
 <p>多线程情况下， B-Tree不像LSM-Tree那么容易。</p>
 <h2 id="4-2-B-Tree优化"><a href="#4-2-B-Tree优化" class="headerlink" title="4.2 B-Tree优化"></a>4.2 B-Tree优化</h2><ul>
@@ -578,6 +576,7 @@ height:50vh;
 <li>RAMCloud</li>
 </ul>
 <h2 id="8-事务处理（OLTP，online-transaction-processing"><a href="#8-事务处理（OLTP，online-transaction-processing" class="headerlink" title="8. 事务处理（OLTP，online transaction processing)"></a>8. 事务处理（OLTP，online transaction processing)</h2><p>OLTP类似于传统的SQL引擎，查询没有固定的format，更多是ad-hoc(online)的查询。OLAP（online analytic processing），类似于数据仓库。OLTP的索引更多使用上述提到的索引；OLAP需要新设计的索引。</p>
+<div class="table-container">
 <table>
 <thead>
 <tr>
@@ -586,32 +585,14 @@ height:50vh;
 <th>Analytic systems (OLAP)</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>Main read pattern</td>
-<td>Small number of records per query, fetched by key</td>
-<td>Aggregate over large number of records</td>
-</tr>
+<tbody>
 <tr>
-<td>Main write pattern</td>
-<td>Random-access, low-latency writes from user input</td>
-<td>Bulk import (ETL) or event stream</td>
+<td></td>
 </tr>
-<tr>
-<td>Primarily used by</td>
-<td>End user/customer, via web application</td>
-<td>Internal analyst, for decision support</td>
-</tr>
-<tr>
-<td>What data represents</td>
-<td>Latest state of data (current point in time)</td>
-<td>History of events that happened over time</td>
-</tr>
-<tr>
-<td>Dataset size</td>
-<td>Gigabytes to terabytes</td>
-<td>Terabytes to petabytes</td>
-</tr>
-</tbody></table>
+</tbody>
+</table>
+</div>
+<p>Main read pattern |Small number of records per query, fetched by key |Aggregate over large number of records<br>Main write pattern |Random-access, low-latency writes from user input |Bulk import (ETL) or event stream<br>Primarily used by |End user/customer, via web application |Internal analyst, for decision support<br>What data represents |Latest state of data (current point in time) |History of events that happened over time<br>Dataset size |Gigabytes to terabytes |Terabytes to petabytes</p>
 <p>典型的数据仓库</p>
 <ul>
 <li>Terdata</li>
@@ -643,7 +624,7 @@ height:50vh;
             <p>Author：<a href="http://yoursite.com">Leo Zhou</a>
             <p>原文链接：<a href="http://yoursite.com/2019/11/21/wild-pig-chapter3/">http://yoursite.com/2019/11/21/wild-pig-chapter3/</a>
             <p>发表日期：<a href="http://yoursite.com/2019/11/21/wild-pig-chapter3/">November 21st 2019, 2:10:59 pm</a>
-            <p>更新日期：<a href="http://yoursite.com/2019/11/21/wild-pig-chapter3/">November 21st 2019, 2:14:46 pm</a>
+            <p>更新日期：<a href="http://yoursite.com/2019/11/21/wild-pig-chapter3/">November 21st 2019, 11:41:58 pm</a>
             <p>版权声明：本文采用<a rel="license noopener" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
         </div>
     
@@ -897,17 +878,17 @@ top:50vh;
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
-    
-        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
-    
-        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
-    
         <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
     
         <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
     
         <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
+    
+        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
+    
+        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
+    
+        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
     
         <span class="sidebar-tag-name" data-tags="索引"><span class="iconfont-archer">&#xe606;</span>索引</span>
     
@@ -979,7 +960,22 @@ jsonContent:
     
         <script src="/scripts/share.js" async></script>    
      
-    </body>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>
 
 

@@ -480,7 +480,6 @@ height:50vh;
 <p>For signed addition, if one operand’s sign is known, overflow checking requires only a single branch after the addition: <code>addi t0, t1, +imm; blt t0, t1, overflow</code>. This covers the common case of addition with an immediate operand.</p>
 <p>For general signed addition, three additional instructions after the addition are required, leveraging the observation that the sum should be less than one of the operands if and only if the other operand is negative.</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">add t0, t1, t2</span><br><span class="line">slti t3, t2, 0</span><br><span class="line">slt t4, t0, t1</span><br><span class="line">bne t3, t4, overflow</span><br></pre></td></tr></table></figure>
-
 <p>In RV64I, checks of 32-bit signed additions can be optimized further by comparing the results of ADD and ADDW on the operands.</p>
 <p>简单来说，检查是否overflow没有flag给你用（为了简化电路设计，另外overflow用处不大），而是用指令+branch来进行判断，详细而言分成3中情况：</p>
 <ol>
@@ -782,17 +781,17 @@ top:50vh;
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
-    
-        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
-    
-        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
-    
         <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
     
         <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
     
         <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
+    
+        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
+    
+        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
+    
+        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
     
         <span class="sidebar-tag-name" data-tags="索引"><span class="iconfont-archer">&#xe606;</span>索引</span>
     
@@ -864,7 +863,22 @@ jsonContent:
     
         <script src="/scripts/share.js" async></script>    
      
-    </body>
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>
 
 
