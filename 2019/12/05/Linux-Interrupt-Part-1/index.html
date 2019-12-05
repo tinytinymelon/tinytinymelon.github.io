@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="Leo Zhou">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="Leo Zhou">
+    
+    <meta name="keywords" content="big data,spark,llvm,micro">
+    
+    <meta name="description" content="">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <title>Linux Interrupt Part 1 · Tiny Tiny Melon</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon_tree.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+</head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >Tiny Tiny Melon</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">Linux Interrupt Part 1</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>Tiny Tiny Melon</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            Linux Interrupt Part 1
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                    <div class= post-intro-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Linux">Linux</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Interrupt">Interrupt</a>
+    
+</div>
+                
+                
+                    <div class="post-intro-read">
+                        <span>Word count: <span class="post-count word-count">3.4k</span>Reading time: <span class="post-count reading-time">15 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2019/12/05</span>
+                    
+                    <span id="busuanzi_container_page_pv" class="busuanzi-pv">
+                        <span class="iconfont-archer">&#xe602;</span>
+                        <span id="busuanzi_value_page_pv"></span>
+                    </span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="中断设计constrains"><a href="#中断设计constrains" class="headerlink" title="中断设计constrains"></a>中断设计constrains</h1><ul>
+<li>中断应该是尽量能够快速响应的，否则类似网络传输的数据可能丢失<ul>
+<li>因此linux将中断处理设计成了urgent的部分+可以defer处理的部分 </li>
+</ul>
+</li>
+<li>中断处理必须考虑重入问题，在处理一个中断时候处理其他中断</li>
+<li>中断可以被屏蔽的，disabled</li>
+</ul>
+<h1 id="中断和异常"><a href="#中断和异常" class="headerlink" title="中断和异常"></a>中断和异常</h1><p>中断(interrupt)</p>
+<ul>
+<li>可屏蔽中断(Maskable interrupts)<ul>
+<li>所有Device触发的Interrupt Requests(IRQs)都是可屏蔽中断</li>
+</ul>
+</li>
+<li>不可屏蔽中断(Nonmaskable interrupts)<ul>
+<li>一些重要的events(比如硬件故障)是不可屏蔽中断</li>
+</ul>
+</li>
+</ul>
+<p>异常(exception)</p>
+<ul>
+<li><p>Processor-detected exceptions: Generated when the CPU detects an anomalous condition when execution instruction. 进一步的细分成三种：</p>
+<ul>
+<li>Faults: 可恢复，返回当前运行的指令。跳转到前的指令存在EIP中</li>
+<li>Traps: 回到下一条指令继续运行</li>
+<li>Aborts: process只能被terminated，不过可以在这里检索错误现场</li>
+</ul>
+</li>
+<li><p>可编程的异常(Programmed exceptions):  Occur at the request of the programmer.</p>
+<ul>
+<li>比如INT指令或者INT 3</li>
+<li>into或者bound指令失败时候也会触发</li>
+<li>一般被叫做software interrupts</li>
+<li>一般用作系统调用或者debug</li>
+</ul>
+</li>
+</ul>
+<p>所有中断和异常使用unsigned 8bits来作为index，这个值被intel称为vector。</p>
+<h1 id="IRQs-and-Interrupts"><a href="#IRQs-and-Interrupts" class="headerlink" title="IRQs and Interrupts"></a>IRQs and Interrupts</h1><p>所有的device controller都可以被指定一条或者多条Interrupt<br> ReQest(IRQ) line. 所有existing IRQ lines都被绑定到专用硬件的input pins上。这个硬件叫Programmable Interrupt Controller(可编程中断控制器)。</p>
+<p> PIC的具体流程如下：</p>
+<ol>
+<li>检测所有连接的IRQ lines是否有raised signals。如果有多个IRQ lines被raised，那么选择lower pin的number。</li>
+<li>如果有IRQ line被raise<ul>
+<li>convert raised signal to对应的vector</li>
+<li>将vector保存在一个Interrupt Controller I/O port，这使得cpu可以通过data bus读到这个vector</li>
+<li>send一个raised signal到CPU的INTR pin，触发一个中断</li>
+<li>等待cpu acknowldege the interrupt signal by writting into one of the Programmable Interrupt Controllers(PIC) I/O ports. 在此之后，clear INTR line.</li>
+</ul>
+<ol>
+<li>回到step 1</li>
+</ol>
+</li>
+</ol>
+<p>IRQ定义从0开始，也就是IRQ0，对应的intel的vector值从32开始。但是具体的对应的关系，是可以通过编程来定义的。</p>
+<p>IRQ的line是可以选择性的ignored，但是对应的signal不会被丢失，会在un-ingore时候触发该有的操作。</p>
+<p>注意，这里的ignore和可屏蔽的中断的屏蔽是两个概念。EFLAGS中的IF flag的屏蔽和恢复(cli and sti)都是针对于所有IRQ lines。</p>
+<p>最早的PIC设备是2片8259A芯片，支持15个IRQs(主片的IRQ2 pin接到了从片上)。同时8259A芯片不支持多核（SMP）。</p>
+<h1 id="APIC-Advanced-Programmable-Interrupt-Controller"><a href="#APIC-Advanced-Programmable-Interrupt-Controller" class="headerlink" title="APIC (Advanced Programmable Interrupt Controller)"></a>APIC (Advanced Programmable Interrupt Controller)</h1><p>为了支持SMP，引入了APIC，包括：</p>
+<ul>
+<li>local APIC，包含LINT0和LINT1两个pin接口，在模拟8259A芯片时候，可以一个作为INTR，一个作为NMI。</li>
+<li>I/O APIC，作为对接设备的LB存在，负责接收device， controller的singal，然后负责分发。也能模拟8259A芯片。</li>
+<li>可编程，提供复杂的IRQ和vector的映射关系</li>
+<li>同时通过各自的Interrupt Command Register(ICR)，各个core之间也可以相互发送消息（中断），称为interprocessor interrupt (IPIs)</li>
+<li>I/O APIC的分发可以是static的（类似affinity），也可以使用round robin的方式。</li>
+</ul>
+<h1 id="Required-Exceptions"><a href="#Required-Exceptions" class="headerlink" title="Required Exceptions"></a>Required Exceptions</h1><p>vector最小的一系列exception(0-19)是intel定义，并且每个os都必须又对应的handler进行处理的。linux对于这些exception，每个注册了对应的exeption handler，这些handler大部分最终会send相对应的SIGNAL来方便其他程序监听和处理。比较有意思的几个如下：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Exception</th>
+<th>Exception handler</th>
+<th>Signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14</td>
+<td>Page Fault</td>
+<td>page_fault( )</td>
+<td>SIGSEGV</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Alignment</td>
+<td>check alignment_check( )</td>
+<td>SIGBUS</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id="IDT"><a href="#IDT" class="headerlink" title="IDT"></a>IDT</h1><p>IDT中可以保存三类gate：</p>
+<ul>
+<li><strong>Task Gate</strong>：保存了一个TSS的段选择器，简单来说就是当这个exception handler被触发时候，会发生task的切换来进行处理</li>
+<li><strong>Interrupt Gate</strong>：保存普通的段选择器+offset，用来指向对应的处理代码入口；Interrupt Gate触发时候会clear IF flag来屏蔽中断。</li>
+<li><strong>Trap Gate</strong>：和Interrupt Gate一样，保存普通的段选择器+offset，但是不会屏蔽中断</li>
+</ul>
+<p>总体来说，Linux uses interrupt gates to handle interrupts and trap gates to handle exceptions.</p>
+<h1 id="Interrupt-Trigger-Process"><a href="#Interrupt-Trigger-Process" class="headerlink" title="Interrupt Trigger Process"></a>Interrupt Trigger Process</h1><p>Trigger process</p>
+<ol>
+<li>从GDTR获取GDT的信息，然后取得对应的段描述符</li>
+<li>比较权限，需要满足下述条件，否则throw “General Protection”:<ul>
+<li>对于非用户触发的Interrupt，CPL &lt;= DPL，也就是说interrupt handler权限要不小于触发中断的程序的权限，否则无法进行处理中断。</li>
+<li>对于用户触发的Interrupt，需要CPL =&gt; DPL，也就是说用户的权限要不小于触发的handler的权限，否则用户可以去调用其他的interrupt或者trap gate。</li>
+</ul>
+</li>
+<li>如果CPL和DPL的权限不同，那就需要切换到DPL对应级别的TSS和Stack上<ul>
+<li>首先读取当前的ss和esp信息（当前stack信息）</li>
+<li>从需要切换到对象的TSS中读取对应的ss和esp信息</li>
+<li>将当前的ss和esp信息保存在切换后的stack中</li>
+</ul>
+</li>
+<li>如果是fault，那么需要同时需要保存cs和eip，等待handler后返回现场（逻辑地址）；最后保存eflags。如果有hardware error code，同样保存在stack上。</li>
+<li>从段描述符中读取基地址，加上offset，得到目标逻辑地址并设置cs和eip，开始执行interrupt handler。</li>
+</ol>
+<p>在interrupt handler完成工作后，需要返回到原有的进程中，一般通过iret命令，其包括如下的操作：</p>
+<ol>
+<li>从当前stack上获取cs，eip和eflags。</li>
+<li>如果权限之前发生过切换，那么需要恢复到原有的stack上，ss和esp同样保存在interrupt handler的stack上</li>
+<li>恢复stack，恢复cs，eip和eflags</li>
+<li>检查ds，es，fs和gs的DPL是否小于恢复后的CPL，如果是，那么进行清空。这是以防用户进程获取的系统权限级别的段描述符。</li>
+</ol>
+<h1 id="Interrupt-Gate"><a href="#Interrupt-Gate" class="headerlink" title="Interrupt Gate"></a>Interrupt Gate</h1><p>Gate类型：</p>
+<ul>
+<li><strong>Interrupt gate</strong><ul>
+<li>DPL = 0</li>
+<li>处理内部的中断(interrupt)</li>
+</ul>
+</li>
+<li><strong>System gate</strong><ul>
+<li>DPL = 3</li>
+<li>vector 4(into), 5(bound)和128(int 0x80)使用这个gate</li>
+</ul>
+</li>
+<li><strong>System interrupt gate</strong><ul>
+<li>DPL = 3</li>
+<li>int3, User Mode的Debug</li>
+</ul>
+</li>
+<li><strong>Trap gate</strong><ul>
+<li>DPL = 0</li>
+<li>大部分内部异常(exception)依赖于这个</li>
+</ul>
+</li>
+<li><strong>Task gate</strong><ul>
+<li>DPL = 0</li>
+<li>handle double fault</li>
+</ul>
+</li>
+</ul>
+<h1 id="IDT初始化"><a href="#IDT初始化" class="headerlink" title="IDT初始化"></a>IDT初始化</h1><p>5.4 kernel中和UTLK中的实现已经有所不同了</p>
+<h2 id="legacy-mode"><a href="#legacy-mode" class="headerlink" title="legacy mode"></a>legacy mode</h2><p>在4.x版本中，初始化依然是通过”函数”：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">oid __init trap_init(void)</span><br><span class="line">&#123;</span><br><span class="line">	int i;</span><br><span class="line"></span><br><span class="line">	set_intr_gate(X86_TRAP_DE, divide_error);</span><br><span class="line">	set_intr_gate_ist(X86_TRAP_NMI, &amp;nmi, NMI_STACK);</span><br><span class="line">	/* int4 can be called from all */</span><br><span class="line">	set_system_intr_gate(X86_TRAP_OF, &amp;overflow);</span><br><span class="line">	set_intr_gate(X86_TRAP_BR, bounds);</span><br><span class="line">	set_intr_gate(X86_TRAP_UD, invalid_op);</span><br><span class="line">	set_intr_gate(X86_TRAP_NM, device_not_available);</span><br><span class="line">#ifdef CONFIG_X86_32</span><br><span class="line">	set_task_gate(X86_TRAP_DF, GDT_ENTRY_DOUBLEFAULT_TSS);</span><br><span class="line">#else</span><br><span class="line">	set_intr_gate_ist(X86_TRAP_DF, &amp;double_fault, DOUBLEFAULT_STACK);</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>set_intr_gate负责设置interrupt gate：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">set_intr_gate(n, addr)</span><br><span class="line"> |- set_intr_gate_notrace(n, addr);</span><br><span class="line">    |- _set_gate(n, GATE_INTERRUPT, (<span class="keyword">void</span> *)addr, <span class="number">0</span>, <span class="number">0</span>, __KERNEL_CS);</span><br><span class="line">       |- pack_gate(&amp;s, type, (<span class="keyword">unsigned</span> <span class="keyword">long</span>)addr, dpl, ist, seg);</span><br><span class="line">       |- write_idt_entry(idt_table, gate, &amp;s);</span><br><span class="line">       |- write_trace_idt_entry(gate, &amp;s); <span class="comment">// trace</span></span><br><span class="line">  |- _trace_set_gate  <span class="comment">// linux trace</span></span><br><span class="line">  </span><br><span class="line"><span class="comment">// write</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> write_idt_entry(dt, entry, g)		native_write_idt_entry(dt, entry, g)</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">native_write_idt_entry</span><span class="params">(gate_desc *idt, <span class="keyword">int</span> entry, <span class="keyword">const</span> gate_desc *gate)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">memcpy</span>(&amp;idt[entry], gate, <span class="keyword">sizeof</span>(*gate));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到set_intr_gate等一些列操作，最终是往内存的一个位置(idt_table)写入对应的gate信息。</p>
+<p>idt_table在head_32.S中被定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">idt_descr:</span><br><span class="line">	.word IDT_ENTRIES*8-1		# idt contains 256 entries</span><br><span class="line">	.long idt_table</span><br></pre></td></tr></table></figure>
+<p>对于64bit的定义在arch/x86/kernel/cpu/common.c中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#ifdef CONFIG_X86_64</span><br><span class="line">struct desc_ptr idt_descr __ro_after_init = &#123;</span><br><span class="line">	.size = NR_VECTORS * 16 - 1,</span><br><span class="line">	.address = (unsigned long) idt_table,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>随后会被lidt命令把地址写入idtr中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * The load_current_idt() must be called with interrupts disabled</span><br><span class="line"> * to avoid races. That way the IDT will always be set back to the expected</span><br><span class="line"> * descriptor. It&apos;s also called when a CPU is being initialized, and</span><br><span class="line"> * that doesn&apos;t need to disable interrupts, as nothing should be</span><br><span class="line"> * bothering the CPU then.</span><br><span class="line"> */</span><br><span class="line">static inline void load_current_idt(void)</span><br><span class="line">&#123;</span><br><span class="line">	if (is_debug_idt_enabled())</span><br><span class="line">		load_debug_idt();</span><br><span class="line">	else if (is_trace_idt_enabled())</span><br><span class="line">		load_trace_idt();</span><br><span class="line">	else</span><br><span class="line">		load_idt((const struct desc_ptr *)&amp;idt_descr);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而lidt的会读取desc_ptr struct的size作为limit，address作为idt的base：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">IF OperandSize = 16</span><br><span class="line">    THEN</span><br><span class="line">        IDTR(Limit) ← SRC[0:15];</span><br><span class="line">        IDTR(Base) ← SRC[16:47] AND 00FFFFFFH;</span><br><span class="line">    ELSE IF 32-bit Operand Size</span><br><span class="line">        THEN</span><br><span class="line">            IDTR(Limit) ← SRC[0:15];</span><br><span class="line">            IDTR(Base) ← SRC[16:47];</span><br><span class="line">        FI;</span><br><span class="line">    ELSE IF 64-bit Operand Size (* In 64-Bit Mode *)</span><br><span class="line">        THEN</span><br><span class="line">            IDTR(Limit) ← SRC[0:15];</span><br><span class="line">            IDTR(Base) ← SRC[16:79];</span><br><span class="line">        FI;</span><br><span class="line">FI;</span><br></pre></td></tr></table></figure>
+<h2 id="kernel-version-5-4"><a href="#kernel-version-5-4" class="headerlink" title="kernel version 5.4"></a>kernel version 5.4</h2><p>5.4 kernel中初始化有改变，set_intr_gate没有了，或者说设置default idt的值不通过set_intr_gate。不过idt_table之类的还是在的，依旧做为idt的内存存储：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * The default IDT entries which are set up in trap_init() before</span><br><span class="line"> * cpu_init() is invoked. Interrupt stacks cannot be used at that point and</span><br><span class="line"> * the traps which use them are reinitialized with IST after cpu_init() has</span><br><span class="line"> * set up TSS.</span><br><span class="line"> */</span><br><span class="line">static const __initconst struct idt_data def_idts[] = &#123;</span><br><span class="line">	INTG(X86_TRAP_DE,		divide_error),</span><br><span class="line">	INTG(X86_TRAP_NMI,		nmi),</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">#ifdef CONFIG_X86_32</span><br><span class="line">	TSKG(X86_TRAP_DF,		GDT_ENTRY_DOUBLEFAULT_TSS),</span><br><span class="line">#else</span><br><span class="line">	INTG(X86_TRAP_DF,		double_fault),</span><br><span class="line">#endif</span><br><span class="line">	INTG(X86_TRAP_DB,		debug),</span><br><span class="line"></span><br><span class="line">	SYSG(X86_TRAP_OF,		overflow),</span><br><span class="line">#if defined(CONFIG_IA32_EMULATION)</span><br><span class="line">	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_compat),</span><br><span class="line">#elif defined(CONFIG_X86_32)</span><br><span class="line">	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_32),</span><br><span class="line">#endif</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到，set_intr_gate变成了INTG的宏：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#define G(_vector, _addr, _ist, _type, _dpl, _segment)	\</span><br><span class="line">	&#123;						\</span><br><span class="line">		.vector		= _vector,		\</span><br><span class="line">		.bits.ist	= _ist,			\</span><br><span class="line">		.bits.type	= _type,		\</span><br><span class="line">		.bits.dpl	= _dpl,			\</span><br><span class="line">		.bits.p		= 1,			\</span><br><span class="line">		.addr		= _addr,		\</span><br><span class="line">		.segment	= _segment,		\</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">/* Interrupt gate */</span><br><span class="line">#define INTG(_vector, _addr)				\</span><br><span class="line">	G(_vector, _addr, DEFAULT_STACK, GATE_INTERRUPT, DPL0, __KERNEL_CS)</span><br></pre></td></tr></table></figure>
+<p>这里的idt_data定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct idt_data &#123;</span><br><span class="line">	unsigned int	vector;</span><br><span class="line">	unsigned int	segment;</span><br><span class="line">	struct idt_bits	bits;</span><br><span class="line">	const void	*addr;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>而def_idts的值会在函数idt_setup_from_table中写入：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">static void</span><br><span class="line">idt_setup_from_table(gate_desc *idt, const struct idt_data *t, int size, bool sys)</span><br><span class="line">&#123;</span><br><span class="line">	gate_desc desc;</span><br><span class="line"></span><br><span class="line">	for (; size &gt; 0; t++, size--) &#123;</span><br><span class="line">		idt_init_desc(&amp;desc, t);</span><br><span class="line">		write_idt_entry(idt, t-&gt;vector, &amp;desc);</span><br><span class="line">		if (sys)</span><br><span class="line">			set_bit(t-&gt;vector, system_vectors);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该这么多是为了保证代码整洁，原来的32和64bit定义分开，这里统一到了一起。</p>
+<h2 id="ignore-irq-handler"><a href="#ignore-irq-handler" class="headerlink" title="ignore irq handler"></a>ignore irq handler</h2><p>在irq handler初始化之前，所有的对应的idt entry都会被设置成 head_32.S中的early_ignore_irq(老版本是ignore_int)，代码基本一致：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">/* This is the default interrupt &quot;handler&quot; :-) */</span><br><span class="line">ENTRY(early_ignore_irq)</span><br><span class="line">	cld</span><br><span class="line">#ifdef CONFIG_PRINTK</span><br><span class="line">	pushl %eax</span><br><span class="line">	pushl %ecx</span><br><span class="line">	pushl %edx</span><br><span class="line">	pushl %es</span><br><span class="line">	pushl %ds</span><br><span class="line">	movl $(__KERNEL_DS),%eax</span><br><span class="line">	movl %eax,%ds</span><br><span class="line">	movl %eax,%es</span><br><span class="line">	cmpl $2,early_recursion_flag</span><br><span class="line">	je hlt_loop</span><br><span class="line">	incl early_recursion_flag</span><br><span class="line">	pushl 16(%esp)</span><br><span class="line">	pushl 24(%esp)</span><br><span class="line">	pushl 32(%esp)</span><br><span class="line">	pushl 40(%esp)</span><br><span class="line">	pushl $int_msg</span><br><span class="line">	call printk</span><br><span class="line"></span><br><span class="line">	call dump_stack</span><br><span class="line"></span><br><span class="line">	addl $(5*4),%esp</span><br><span class="line">	popl %ds</span><br><span class="line">	popl %es</span><br><span class="line">	popl %edx</span><br><span class="line">	popl %ecx</span><br><span class="line">	popl %eax</span><br><span class="line">#endif</span><br><span class="line">	iret</span><br></pre></td></tr></table></figure>
+<h2 id="Typical-Exception-Handler-Process"><a href="#Typical-Exception-Handler-Process" class="headerlink" title="Typical Exception Handler Process"></a>Typical Exception Handler Process</h2><p>基本的exception处理流程包括如下几步：</p>
+<ul>
+<li>保存error code，jmp到通用的exception handler流程<ul>
+<li>legacy mode: error_code</li>
+<li>latest(5.4): common_exception</li>
+</ul>
+</li>
+<li>通用的exception handler流程会首先保存context</li>
+<li>调用对应的c代码的handler(地址保存在%edi中)</li>
+<li>调用ret_from_exception开始返回</li>
+<li>调用restore_all_kernel</li>
+<li>检查是否有中断</li>
+<li>恢复stack frame随后iret</li>
+</ul>
+<p>更加完整的流程描述如下：</p>
+<ol>
+<li>Saves the registers that might be used by the high-level C function on the stack.</li>
+<li>Issues a cld instruction to clear the direction flag DF of eflags, thus making sure<br>that autoincreases on the edi and esi registers will be used with string<br>instructions.*</li>
+<li>Copies the hardware error code saved in the stack at location esp+36 in edx.<br>Stores the value –1 in the same stack location. As we’ll see in the section “Reexecution of System Calls” in Chapter 11, this value is used to separate 0x80 exceptions from other exceptions.</li>
+<li>Loads edi with the address of the high-level do_handler_name( ) C function<br>saved in the stack at location esp+32; writes the contents of es in that stack<br>location.</li>
+<li>Loads in the eax register the current top location of the Kernel Mode stack. This<br>address identifies the memory cell containing the last register value saved in<br>step 1.</li>
+<li>Loads the user data Segment Selector into the ds and es registers.</li>
+<li>Invokes the high-level C function whose address is now stored in edi.</li>
+</ol>
+<p>以下，举处除零的handler为例。</p>
+<h3 id="Legacy-do-divide-error实现"><a href="#Legacy-do-divide-error实现" class="headerlink" title="Legacy do_divide_error实现"></a>Legacy do_divide_error实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ENTRY(divide_error)</span><br><span class="line">	RING0_INT_FRAME</span><br><span class="line">	ASM_CLAC</span><br><span class="line">	pushl_cfi $0			# no error code</span><br><span class="line">	pushl_cfi $do_divide_error</span><br><span class="line">	jmp error_code</span><br><span class="line">	CFI_ENDPROC</span><br><span class="line">END(divide_error)</span><br></pre></td></tr></table></figure>
+<p>error_code是共享的处理流程，其中会调用到do_divide_error函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">error_code:</span><br><span class="line">    ... # push registers</span><br><span class="line"></span><br><span class="line">	cld</span><br><span class="line">	</span><br><span class="line">	... # build up do_divide_error function stack</span><br><span class="line">	 </span><br><span class="line">	call *%edi # call do_divide_error function</span><br><span class="line">	jmp ret_from_exception</span><br><span class="line">	CFI_ENDPROC</span><br><span class="line">END(page_fault)</span><br></pre></td></tr></table></figure>
+<p>do_divide_error是个c程序，定义在traps.c中的宏DO_ERROR_INFO，最终会调用do_trap来：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DO_ERROR_INFO(trapnr, signr, str, name, sicode, siaddr)		\</span></span><br><span class="line">dotraplinkage <span class="keyword">void</span> do_#<span class="meta">#name(struct pt_regs *regs, long error_code)	\</span></span><br><span class="line">&#123;									\</span><br><span class="line">	...</span><br><span class="line">	conditional_sti(regs);						\</span><br><span class="line">	do_trap(trapnr, signr, str, regs, error_code, &amp;info);		\</span><br><span class="line">	exception_exit(prev_state);					\</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// do_trap</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __kprobes</span><br><span class="line">do_trap(<span class="keyword">int</span> trapnr, <span class="keyword">int</span> signr, <span class="keyword">char</span> *str, struct pt_regs *regs,</span><br><span class="line">	<span class="keyword">long</span> error_code, <span class="keyword">siginfo_t</span> *info)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">task_struct</span> *<span class="title">tsk</span> = <span class="title">current</span>;</span></span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (info)</span><br><span class="line">		force_sig_info(signr, info, tsk);</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">		force_sig(signr, tsk);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后一步是想当前程序发送一个SIGFPE signal。ret_from_exception和5.4版本中功能类似，后面一起讲。</p>
+<h3 id="5-4-kernel实现："><a href="#5-4-kernel实现：" class="headerlink" title="5.4 kernel实现："></a>5.4 kernel实现：</h3><h4 id="32bit-divide-error"><a href="#32bit-divide-error" class="headerlink" title="32bit divide_error"></a>32bit divide_error</h4><p>代码在entry_32.S中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ENTRY(divide_error)</span><br><span class="line">	ASM_CLAC</span><br><span class="line">	pushl	$0				# 这里保存error code，0代表没有</span><br><span class="line">	pushl	$do_divide_error  # 这里保存目标c程序地址</span><br><span class="line">	jmp	common_exception</span><br><span class="line">END(divide_error)</span><br></pre></td></tr></table></figure>
+<p>common_exception是通用的exception处理流程（除了double fault）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">common_exception:</span><br><span class="line">	/* the function address is in %gs&apos;s slot on the stack */</span><br><span class="line">	SAVE_ALL switch_stacks=1 skip_gs=1</span><br><span class="line">	ENCODE_FRAME_POINTER</span><br><span class="line">	UNWIND_ESPFIX_STACK</span><br><span class="line"></span><br><span class="line">	/* fixup %gs */</span><br><span class="line">	GS_TO_REG %ecx</span><br><span class="line">	movl	PT_GS(%esp), %edi		# get the function address</span><br><span class="line">	REG_TO_PTGS %ecx</span><br><span class="line">	SET_KERNEL_GS %ecx</span><br><span class="line"></span><br><span class="line">	/* fixup orig %eax */</span><br><span class="line">	movl	PT_ORIG_EAX(%esp), %edx		# get the error code</span><br><span class="line">	movl	$-1, PT_ORIG_EAX(%esp)		# no syscall to restart</span><br><span class="line"></span><br><span class="line">	TRACE_IRQS_OFF</span><br><span class="line">	movl	%esp, %eax			# pt_regs pointer</span><br><span class="line">	CALL_NOSPEC %edi          # 跳转到对应的c历程</span><br><span class="line">	jmp	ret_from_exception</span><br><span class="line">END(common_exception)</span><br></pre></td></tr></table></figure>
+<p>除去一堆保存环境和测试的，这里要关注的就是跳转到c handler的代码。</p>
+<h4 id="64bit-divide-error实现"><a href="#64bit-divide-error实现" class="headerlink" title="64bit divide_error实现"></a>64bit divide_error实现</h4><p>代码在entry_64.S中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">idtentry divide_error			do_divide_error			has_error_code=0</span><br><span class="line"></span><br><span class="line">// idtentry - Generate an IDT entry stub</span><br></pre></td></tr></table></figure>
+<p>idtentry: generates an IDT stub that sets up a usable kernel context, creates struct pt_regs, and calls @do_sym. </p>
+<h4 id="c-handler"><a href="#c-handler" class="headerlink" title="c handler"></a>c handler</h4><p>do_divide_error实现在arch\x86\kernel\traps.c</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IP ((void __user *)uprobe_get_trap_addr(regs))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DO_ERROR(trapnr, signr, sicode, addr, str, name)		   \</span></span><br><span class="line">dotraplinkage <span class="keyword">void</span> do_#<span class="meta">#name(struct pt_regs *regs, long error_code)	   \</span></span><br><span class="line">&#123;									   \</span><br><span class="line">	do_error_trap(regs, error_code, str, trapnr, signr, sicode, addr); \</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">DO_ERROR(X86_TRAP_DE,     SIGFPE,  FPE_INTDIV,   IP, <span class="string">"divide error"</span>,        divide_error)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">do_error_trap</span><span class="params">(struct pt_regs *regs, <span class="keyword">long</span> error_code, <span class="keyword">char</span> *str,</span></span></span><br><span class="line"><span class="function"><span class="params">	<span class="keyword">unsigned</span> <span class="keyword">long</span> trapnr, <span class="keyword">int</span> signr, <span class="keyword">int</span> sicode, <span class="keyword">void</span> __user *addr)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	RCU_LOCKDEP_WARN(!rcu_is_watching(), <span class="string">"entry code didn't wake RCU"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * WARN*()s end up here; fix them up before we call the</span></span><br><span class="line"><span class="comment">	 * notifier chain.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">if</span> (!user_mode(regs) &amp;&amp; fixup_bug(regs, trapnr))</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (notify_die(DIE_TRAP, str, regs, error_code, trapnr, signr) !=</span><br><span class="line">			NOTIFY_STOP) &#123;</span><br><span class="line">		cond_local_irq_enable(regs);</span><br><span class="line">		do_trap(trapnr, signr, str, regs, error_code, sicode, addr);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>类似的，这里也会调用的通用do_trap实现中去。</p>
+<h2 id="返回"><a href="#返回" class="headerlink" title="返回"></a>返回</h2><p>完成调用以后，ret_from_exception负责返回到原来进程中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ret_from_exception</span><br><span class="line">  - restore_all_kernel</span><br><span class="line">    - .Lno_preempt</span><br><span class="line">      - .Lirq_return</span><br><span class="line">        - IRET_FRAME -&gt; 回复堆栈</span><br><span class="line">        - INTERRUPT_RETURN -&gt; iret 或者 jmp native_iret</span><br></pre></td></tr></table></figure>
+<h1 id="中断-Interrupt"><a href="#中断-Interrupt" class="headerlink" title="中断(Interrupt)"></a>中断(Interrupt)</h1><ul>
+<li>异常最终的操作基本都是发signal给当前的进程，这是因为异常的发生往往是in time的。</li>
+<li>但是对于中断，中断的trigger往往是异步的，触发时候目标进程可能在sleep状态，也就是说当前进程不是中断的目标进程。</li>
+</ul>
+<p>中断细节可以分成如下几类：</p>
+<ul>
+<li>I/O interrupts</li>
+<li>Timer interrupts<ul>
+<li>local APIC timer or an external timer</li>
+</ul>
+</li>
+<li>Interprocessor interrupts</li>
+</ul>
+<h2 id="I-O-interrupts"><a href="#I-O-interrupts" class="headerlink" title="I/O interrupts"></a>I/O interrupts</h2><p>多台设备可能绑在同一个I/O interrupt上，使用同一条IRQ line。此时，需要一种分享的方式，一般有两种方式：</p>
+<ul>
+<li>IRQ sharing: 多个设备使用同一个interrupt service routines (ISRs)，这个routine需要去判断到底哪一个设备发送了中断。</li>
+<li>IRQ dynamic allocation: 一次只让一个设备使用，只有激活状态的设备可以尝试独占IRQ line。</li>
+</ul>
+<p>另一方面，对于中断处理程序，因为其会屏蔽中断，并且可能被switch出去，所以linux会把中断处理后可能的操作分成三类：</p>
+<ul>
+<li>Critical</li>
+<li>Noncritical</li>
+<li>Noncritical deferrable</li>
+</ul>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>Author：<a href="http://yoursite.com">Leo Zhou</a>
+            <p>原文链接：<a href="http://yoursite.com/2019/12/05/Linux-Interrupt-Part-1/">http://yoursite.com/2019/12/05/Linux-Interrupt-Part-1/</a>
+            <p>发表日期：<a href="http://yoursite.com/2019/12/05/Linux-Interrupt-Part-1/">December 5th 2019, 10:49:18 pm</a>
+            <p>更新日期：<a href="http://yoursite.com/2019/12/05/Linux-Interrupt-Part-1/">December 5th 2019, 10:55:09 pm</a>
+            <p>版权声明：本文采用<a rel="license noopener" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">知识共享署名-非商业性使用 4.0 国际许可协议</a>进行许可</p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2019/11/21/wild-pig-chapter3/" title= "野猪书第三章读书笔记">
+                    <div class="prevTitle">野猪书第三章读书笔记</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:july24lynna@gmail.com" target="_blank" rel="noopener" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="https://github.com/tinytinymelon" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+            
+                <span class="iconfont-archer wechat" title=wechat>
+                  
+                  <img class="profile-qr" src="/assets/example_qr.png" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
+    </div>
+    <!-- 不蒜子  -->
+    
+    <div class="busuanzi-container">
+    
+     
+    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
+    
+    </div>
+    
+</footer>
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#中断设计constrains"><span class="toc-number">1.</span> <span class="toc-text">中断设计constrains</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#中断和异常"><span class="toc-number">2.</span> <span class="toc-text">中断和异常</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#IRQs-and-Interrupts"><span class="toc-number">3.</span> <span class="toc-text">IRQs and Interrupts</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#APIC-Advanced-Programmable-Interrupt-Controller"><span class="toc-number">4.</span> <span class="toc-text">APIC (Advanced Programmable Interrupt Controller)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Required-Exceptions"><span class="toc-number">5.</span> <span class="toc-text">Required Exceptions</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#IDT"><span class="toc-number">6.</span> <span class="toc-text">IDT</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Interrupt-Trigger-Process"><span class="toc-number">7.</span> <span class="toc-text">Interrupt Trigger Process</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Interrupt-Gate"><span class="toc-number">8.</span> <span class="toc-text">Interrupt Gate</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#IDT初始化"><span class="toc-number">9.</span> <span class="toc-text">IDT初始化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#legacy-mode"><span class="toc-number">9.1.</span> <span class="toc-text">legacy mode</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#kernel-version-5-4"><span class="toc-number">9.2.</span> <span class="toc-text">kernel version 5.4</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ignore-irq-handler"><span class="toc-number">9.3.</span> <span class="toc-text">ignore irq handler</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Typical-Exception-Handler-Process"><span class="toc-number">9.4.</span> <span class="toc-text">Typical Exception Handler Process</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Legacy-do-divide-error实现"><span class="toc-number">9.4.1.</span> <span class="toc-text">Legacy do_divide_error实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4-kernel实现："><span class="toc-number">9.4.2.</span> <span class="toc-text">5.4 kernel实现：</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#32bit-divide-error"><span class="toc-number">9.4.2.1.</span> <span class="toc-text">32bit divide_error</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#64bit-divide-error实现"><span class="toc-number">9.4.2.2.</span> <span class="toc-text">64bit divide_error实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#c-handler"><span class="toc-number">9.4.2.3.</span> <span class="toc-text">c handler</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#返回"><span class="toc-number">9.5.</span> <span class="toc-text">返回</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#中断-Interrupt"><span class="toc-number">10.</span> <span class="toc-text">中断(Interrupt)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#I-O-interrupts"><span class="toc-number">10.1.</span> <span class="toc-text">I/O interrupts</span></a></li></ol></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 7
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/05</span><a class="archive-post-title" href= "/2019/12/05/Linux-Interrupt-Part-1/" >Linux Interrupt Part 1</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/21</span><a class="archive-post-title" href= "/2019/11/21/wild-pig-chapter3/" >野猪书第三章读书笔记</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/18</span><a class="archive-post-title" href= "/2019/11/18/RSIC-V-RV32I-Instruction-Set/" >RSIC-V RV32I Instruction Set</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/18</span><a class="archive-post-title" href= "/2019/11/18/wild-pig-chapter2/" >野猪书第二章读书笔记</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/17</span><a class="archive-post-title" href= "/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/" >RISC-V 寄存器 overview</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/14</span><a class="archive-post-title" href= "/2019/11/14/ARM-Register-Quick-View/" >ARM ISA Overview</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">11/12</span><a class="archive-post-title" href= "/2019/11/12/wild-pig-chapter1/" >野猪书第一章读书笔记</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="ARM"><span class="iconfont-archer">&#xe606;</span>ARM</span>
+    
+        <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
+    
+        <span class="sidebar-tag-name" data-tags="LLVM"><span class="iconfont-archer">&#xe606;</span>LLVM</span>
+    
+        <span class="sidebar-tag-name" data-tags="Linux"><span class="iconfont-archer">&#xe606;</span>Linux</span>
+    
+        <span class="sidebar-tag-name" data-tags="Interrupt"><span class="iconfont-archer">&#xe606;</span>Interrupt</span>
+    
+        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
+    
+        <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
+    
+        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
+    
+        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
+    
+        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
+    
+        <span class="sidebar-tag-name" data-tags="索引"><span class="iconfont-archer">&#xe606;</span>索引</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "Leo Zhou"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
+
+

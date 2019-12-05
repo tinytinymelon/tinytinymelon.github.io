@@ -346,6 +346,58 @@
     
     
     <article class="index-post">
+        <a class="abstract-title" href = "/2019/12/05/Linux-Interrupt-Part-1/" >
+            
+                <span>Linux Interrupt Part 1</span>
+        </a>
+        <div class="abstract-content">
+            中断设计constrains
+中断应该是尽量能够快速响应的，否则类似网络传输的数据可能丢失
+因此linux将中断处理设计成了urgent的部分+可以defer处理的部分 
+
+
+中断处理必须考虑重入问题，在处理一个中断时候处理其他中断
+中断可以被屏蔽的，disabled
+
+中断和异常中断(interrupt)
+
+可屏蔽中断(Maskable interrupts)
+所有Device触发的Interrupt Requests(IRQs)都是可屏蔽中断
+
+
+不可屏蔽中断(Nonmaskable interrupts)
+一些重要的events(比如硬件故障)是不可屏蔽中断
+
+
+
+异常(excep...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/12/05</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Linux">Linux</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Interrupt">Interrupt</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
         <a class="abstract-title" href = "/2019/11/21/wild-pig-chapter3/" >
             
                 <span>野猪书第三章读书笔记</span>
@@ -511,9 +563,9 @@ join不是那么友好，许多数据库都不支持join
             
             <div class= abstract-tags >
     
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "RISC-V">RISC-V</a>
-    
         <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "RISC-V">RISC-V</a>
     
 </div>
             
@@ -558,6 +610,16 @@ AA...
                 <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/14</span>
             </div>
             <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "ARM">ARM</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "LLVM">LLVM</a>
+    
+</div>
             
         </div>
     </article>
@@ -770,9 +832,18 @@ AA...
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 6
+        Total : 7
         </div>
         <!-- search  -->
         
@@ -785,6 +856,11 @@ AA...
     
     <div class="archive-year"> 2019 </div>
     <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/05</span><a class="archive-post-title" href= "/2019/12/05/Linux-Interrupt-Part-1/" >Linux Interrupt Part 1</a>
+        </li>
     
     
         <li class="archive-post-item">
@@ -821,9 +897,17 @@ AA...
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
+        <span class="sidebar-tag-name" data-tags="ARM"><span class="iconfont-archer">&#xe606;</span>ARM</span>
     
         <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
+    
+        <span class="sidebar-tag-name" data-tags="LLVM"><span class="iconfont-archer">&#xe606;</span>LLVM</span>
+    
+        <span class="sidebar-tag-name" data-tags="Linux"><span class="iconfont-archer">&#xe606;</span>Linux</span>
+    
+        <span class="sidebar-tag-name" data-tags="Interrupt"><span class="iconfont-archer">&#xe606;</span>Interrupt</span>
+    
+        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
     
         <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
     
