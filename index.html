@@ -359,6 +359,53 @@ height:50vh;
     
     
     <article class="index-post">
+        <a class="abstract-title" href = "/2019/12/07/wild-pig-chapter-4-5-6/" >
+            
+                <span>野猪书第四，五，六章读书笔记</span>
+        </a>
+        <div class="abstract-content">
+            第四章：Overview数据结构需要改动时候，一般需要更新代码或者内部数据结构，此时会碰到两个问题：
+
+滚动更新数据库相对复杂
+依赖客户更新不可靠
+
+这种情况下，新旧数据会同时存在系统中，需要双向兼容：
+
+向后兼容：新代码可以读取旧数据
+向前兼容：旧代码可以读取新数据
+
+语言内置编码方案问题
+和语言绑定的编码方案往往是语言specified
+对象的序列化和反序列化往往需要跳过一些安全check，注入恶意代码变得有可能。比如在java默认构造函数中注入代码。
+不同版本之间的实现往往是不兼容的，最明显的就是Java的jackson系列json序列化lib
+性能也往往不是这些lib着重考虑的因...
+        </div>
+        <div class="abstract-post-meta">
+            <!-- date  -->
+            <div class="abstract-date">
+                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/12/07</span>
+            </div>
+            <!-- tags  -->
+            
+            <div class= abstract-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Storage">Storage</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "数据库">数据库</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "系统设计，分布式">系统设计，分布式</a>
+    
+</div>
+            
+        </div>
+    </article>
+    
+    
+    
+    
+    
+    
+    <article class="index-post">
         <a class="abstract-title" href = "/2019/12/05/Linux-Interrupt-Part-1/" >
             
                 <span>Linux Interrupt Part 1</span>
@@ -576,9 +623,9 @@ join不是那么友好，许多数据库都不支持join
             
             <div class= abstract-tags >
     
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
-    
         <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "RISC-V">RISC-V</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
     
 </div>
             
@@ -626,9 +673,9 @@ AA...
             
             <div class= abstract-tags >
     
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "ARM">ARM</a>
-    
         <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
+    
+        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "ARM">ARM</a>
     
         <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "LLVM">LLVM</a>
     
@@ -932,9 +979,20 @@ AA...
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <div class="total-and-search">
         <div class="total-archive">
-        Total : 7
+        Total : 8
         </div>
         <!-- search  -->
         
@@ -947,6 +1005,11 @@ AA...
     
     <div class="archive-year"> 2019 </div>
     <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/07</span><a class="archive-post-title" href= "/2019/12/07/wild-pig-chapter-4-5-6/" >野猪书第四，五，六章读书笔记</a>
+        </li>
     
     
         <li class="archive-post-item">
@@ -988,9 +1051,11 @@ AA...
         <div class="sidebar-panel-tags">
     <div class="sidebar-tags-name">
     
-        <span class="sidebar-tag-name" data-tags="ARM"><span class="iconfont-archer">&#xe606;</span>ARM</span>
+        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
     
         <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
+    
+        <span class="sidebar-tag-name" data-tags="ARM"><span class="iconfont-archer">&#xe606;</span>ARM</span>
     
         <span class="sidebar-tag-name" data-tags="LLVM"><span class="iconfont-archer">&#xe606;</span>LLVM</span>
     
@@ -998,15 +1063,15 @@ AA...
     
         <span class="sidebar-tag-name" data-tags="Interrupt"><span class="iconfont-archer">&#xe606;</span>Interrupt</span>
     
-        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
-    
-        <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
-    
         <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
     
         <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
     
+        <span class="sidebar-tag-name" data-tags="系统设计，分布式"><span class="iconfont-archer">&#xe606;</span>系统设计，分布式</span>
+    
         <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
+    
+        <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
     
         <span class="sidebar-tag-name" data-tags="索引"><span class="iconfont-archer">&#xe606;</span>索引</span>
     
