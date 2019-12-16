@@ -1,1214 +1,2189 @@
 <!DOCTYPE html>
 <html lang="en">
-    <!-- title -->
-
-
-
-
-<!-- keywords -->
-
-
-
-
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
-    <meta name="author" content="Leo Zhou">
-    <meta name="renderer" content="webkit">
-    <meta name="copyright" content="Leo Zhou">
-    
-    <meta name="keywords" content="big data,spark,llvm,micro">
-    
-    <meta name="description" content="">
-    <meta http-equiv="Cache-control" content="no-cache">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
-    <title>Tiny Tiny Melon</title>
-    <style type="text/css">
-    @font-face {
-        font-family: 'Oswald-Regular';
-        src: url("/font/Oswald-Regular.ttf");
-    }
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
 
-    body {
-        margin: 0;
-    }
-
-    header,
-    footer,
-    .back-top,
-    .sidebar,
-    .container,
-    .site-intro-meta,
-    .toc-wrapper {
-        display: none;
-    }
-
-    .site-intro {
-        position: relative;
-        z-index: 3;
-        width: 100%;
-        /* height: 50vh; */
-        overflow: hidden;
-    }
-
-    .site-intro-placeholder {
-        position: absolute;
-        z-index: -2;
-        top: 0;
-        left: 0;
-        width: calc(100% + 300px);
-        height: 100%;
-        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
-        background-position: center center;
-        transform: translate3d(-226px, 0, 0);
-        animation: gradient-move 2.5s ease-out 0s infinite;
-    }
-
-    @keyframes gradient-move {
-        0% {
-            transform: translate3d(-226px, 0, 0);
-        }
-        100% {
-            transform: translate3d(0, 0, 0);
-        }
-    }
-
-</style>
-
-    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
-    
-    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
-/* This file is meant as a standalone workflow for
-- testing support for link[rel=preload]
-- enabling async CSS loading in browsers that do not support rel=preload
-- applying rel preload css once loaded, whether supported or not.
-*/ -->
-<script>
-(function( w ){
-	"use strict";
-	// rel=preload support test
-	if( !w.loadCSS ){
-		w.loadCSS = function(){};
-	}
-	// define on the loadCSS obj
-	var rp = loadCSS.relpreload = {};
-	// rel=preload feature support test
-	// runs once and returns a function for compat purposes
-	rp.support = (function(){
-		var ret;
-		try {
-			ret = w.document.createElement( "link" ).relList.supports( "preload" );
-		} catch (e) {
-			ret = false;
-		}
-		return function(){
-			return ret;
-		};
-	})();
-
-	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
-	// then change that media back to its intended value on load
-	rp.bindMediaToggle = function( link ){
-		// remember existing media attr for ultimate state, or default to 'all'
-		var finalMedia = link.media || "all";
-
-		function enableStylesheet(){
-			link.media = finalMedia;
-		}
-
-		// bind load handlers to enable media
-		if( link.addEventListener ){
-			link.addEventListener( "load", enableStylesheet );
-		} else if( link.attachEvent ){
-			link.attachEvent( "onload", enableStylesheet );
-		}
-
-		// Set rel and non-applicable media type to start an async request
-		// note: timeout allows this to happen async to let rendering continue in IE
-		setTimeout(function(){
-			link.rel = "stylesheet";
-			link.media = "only x";
-		});
-		// also enable media after 3 seconds,
-		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
-		setTimeout( enableStylesheet, 3000 );
-	};
-
-	// loop through link elements in DOM
-	rp.poly = function(){
-		// double check this to prevent external calls from running
-		if( rp.support() ){
-			return;
-		}
-		var links = w.document.getElementsByTagName( "link" );
-		for( var i = 0; i < links.length; i++ ){
-			var link = links[ i ];
-			// qualify links to those with rel=preload and as=style attrs
-			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
-				// prevent rerunning on link
-				link.setAttribute( "data-loadcss", true );
-				// bind listeners to toggle media back
-				rp.bindMediaToggle( link );
-			}
-		}
-	};
-
-	// if unsupported, run the polyfill
-	if( !rp.support() ){
-		// run once at least
-		rp.poly();
-
-		// rerun poly on an interval until onload
-		var run = w.setInterval( rp.poly, 500 );
-		if( w.addEventListener ){
-			w.addEventListener( "load", function(){
-				rp.poly();
-				w.clearInterval( run );
-			} );
-		} else if( w.attachEvent ){
-			w.attachEvent( "onload", function(){
-				rp.poly();
-				w.clearInterval( run );
-			} );
-		}
-	}
+<link rel="stylesheet" href="/css/main.css">
 
 
-	// commonjs
-	if( typeof exports !== "undefined" ){
-		exports.loadCSS = loadCSS;
-	}
-	else {
-		w.loadCSS = loadCSS;
-	}
-}( typeof global !== "undefined" ? global : this ) );
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://yoursite.com').hostname,
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
 </script>
 
-    <link rel="icon" href= "/assets/favicon_tree.ico" />
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
-    <link rel="preload" href="/scripts/main.js" as="script" />
-    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
-    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
-    
-    <!-- fancybox -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
-    <!-- 百度统计  -->
-    
-    <!-- 谷歌统计  -->
-    
+  <meta property="og:type" content="website">
+<meta property="og:title" content="梅子黄时雨">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;index.html">
+<meta property="og:site_name" content="梅子黄时雨">
+<meta property="og:locale" content="en">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: true,
+    isPost: false
+  };
+</script>
+
+  <title>梅子黄时雨</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
 </head>
 
-    
-        <body class="home-body">
-    
-    
-<header class="header index-header">
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
 
-    <div class="read-progress"></div>
-    <div class="header-sidebar-menu">&#xe775;</div>
-    <!-- post页的toggle banner  -->
-    
-    <a class="home-link" href=/>Tiny Tiny Melon</a>
-</header>
-    <div class="wrapper">
-        <div class="site-intro" style="
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
 
-
-
-
-
-
-
-height:50vh;
-">
-    
-    <!-- 主页  -->
-    
-    
-    <!-- 文章页  -->
-            
-    <div class="site-intro-placeholder"></div>
-    <div class="site-intro-img" style="background-image: url(/intro/index-bg-2.jpg)"></div>
-    <div class="site-intro-meta">
-        <!-- 标题  -->
-        <h1 class="intro-title">
-            <!-- 主页  -->
-            
-            Tiny Tiny Melon
-            <!-- 文章页  -->
-            
-        </h1>
-        <!-- 副标题 -->
-        <p class="intro-subtitle">
-            <!-- 主页副标题  -->
-            
-            
-                keep hungry keep foolish
-            
-            <!-- 文章页  -->
-            
-        </p>
-        <!-- 文章页meta -->
-        
-    </div>
-</div>
-        <script>
- 
-  // get user agent
-  var browser = {
-    versions: function () {
-      var u = window.navigator.userAgent;
-      return {
-        userAgent: u,
-        trident: u.indexOf('Trident') > -1, //IE内核
-        presto: u.indexOf('Presto') > -1, //opera内核
-        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
-        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
-        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
-        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
-        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
-        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
-        iPad: u.indexOf('iPad') > -1, //是否为iPad
-        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
-        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
-        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
-      };
-    }()
-  }
-  console.log("userAgent:" + browser.versions.userAgent);
-
-  // callback
-  function fontLoaded() {
-    console.log('font loaded');
-    if (document.getElementsByClassName('site-intro-meta')) {
-      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
-      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
-      var postIntros = document.getElementsByClassName('post-intros')[0]
-      if (postIntros) {
-        postIntros.classList.add('post-fade-in');
-      }
-    }
-  }
-
-  // UC不支持跨域，所以直接显示
-  function asyncCb(){
-    if (browser.versions.uc) {
-      console.log("UCBrowser");
-      fontLoaded();
-    } else {
-      WebFont.load({
-        custom: {
-          families: ['Oswald-Regular']
-        },
-        loading: function () {  //所有字体开始加载
-          // console.log('loading');
-        },
-        active: function () {  //所有字体已渲染
-          fontLoaded();
-        },
-        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
-          console.log('inactive: timeout');
-          fontLoaded();
-        },
-        timeout: 5000 // Set the timeout to two seconds
-      });
-    }
-  }
-
-  function asyncErr(){
-    console.warn('script load from CDN failed, will load local script')
-  }
-
-  // load webfont-loader async, and add callback function
-  function async(u, cb, err) {
-    var d = document, t = 'script',
-      o = d.createElement(t),
-      s = d.getElementsByTagName(t)[0];
-    o.src = u;
-    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
-    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
-    s.parentNode.insertBefore(o, s);
-  }
-
-  var asyncLoadWithFallBack = function(arr, success, reject) {
-      var currReject = function(){
-        reject()
-        arr.shift()
-        if(arr.length)
-          async(arr[0], success, currReject)
-        }
-
-      async(arr[0], success, currReject)
-  }
-
-  asyncLoadWithFallBack([
-    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
-    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
-    "/lib/webfontloader.min.js"
-  ], asyncCb, asyncErr)
-</script>        
-        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
-        <div class="container container-unloaded">
-            <main class="main index-page">
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/12/11/Compile-LLVM-Clang-Ubuntu-18-04/" >
-            
-                <span>Compile LLVM &amp; Clang @ Ubuntu 18.04</span>
-        </a>
-        <div class="abstract-content">
-            1. Prepare EnvironmentUse apt to install required pakcage:
-1234sudo apt updatesudo apt upgradesudo apt install build-essential cmake python3-dev libncurses5-d make
-2. Download the source codeYou may clone it from github, containting latest code and being able to upstream:
-1git clone https://githu...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/12/11</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "LLVM">LLVM</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Build">Build</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/12/07/wild-pig-chapter-4-5-6/" >
-            
-                <span>野猪书第四，五，六章读书笔记</span>
-        </a>
-        <div class="abstract-content">
-            第四章：Overview数据结构需要改动时候，一般需要更新代码或者内部数据结构，此时会碰到两个问题：
-
-滚动更新数据库相对复杂
-依赖客户更新不可靠
-
-这种情况下，新旧数据会同时存在系统中，需要双向兼容：
-
-向后兼容：新代码可以读取旧数据
-向前兼容：旧代码可以读取新数据
-
-语言内置编码方案问题
-和语言绑定的编码方案往往是语言specified
-对象的序列化和反序列化往往需要跳过一些安全check，注入恶意代码变得有可能。比如在java默认构造函数中注入代码。
-不同版本之间的实现往往是不兼容的，最明显的就是Java的jackson系列json序列化lib
-性能也往往不是这些lib着重考虑的因...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/12/07</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Storage">Storage</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "数据库">数据库</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "系统设计，分布式">系统设计，分布式</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/12/05/Linux-Interrupt-Part-1/" >
-            
-                <span>Linux Interrupt Part 1</span>
-        </a>
-        <div class="abstract-content">
-            中断设计constrains
-中断应该是尽量能够快速响应的，否则类似网络传输的数据可能丢失
-因此linux将中断处理设计成了urgent的部分+可以defer处理的部分 
-
-
-中断处理必须考虑重入问题，在处理一个中断时候处理其他中断
-中断可以被屏蔽的，disabled
-
-中断和异常中断(interrupt)
-
-可屏蔽中断(Maskable interrupts)
-所有Device触发的Interrupt Requests(IRQs)都是可屏蔽中断
-
-
-不可屏蔽中断(Nonmaskable interrupts)
-一些重要的events(比如硬件故障)是不可屏蔽中断
-
-
-
-异常(excep...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/12/05</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Linux">Linux</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Interrupt">Interrupt</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/11/21/wild-pig-chapter3/" >
-            
-                <span>野猪书第三章读书笔记</span>
-        </a>
-        <div class="abstract-content">
-            1. overview数据库分类
-
-事务处理型
-数据分析型
-
-存储索引家族：
-
-日志结构的存储引擎
-面向页的存储引擎，比如b-tree
-
-2. 哈希表索引核心：将key hash到对应的文件位置
-
-使用日志方式，不修改已有记录，在末尾增加
-如果能够保持key在内存中，那么写入速度会很快
-
-
-将日志分段，到一定大小，生成新的段
-在合适时机进行段合并，只保留最新的结果
-使用后台线程，在完成合并之前使用老的index
-合并之后切换到新的index，删除老的index
-
-
-最终，每一个段都会有自己的索引（注意，可能有多个段）
-搜索需要从最新的段开始往前找索引表
-
-
-
-在实现中还需要考虑：
-
-文件...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/21</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Storage">Storage</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "数据库">数据库</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "系统设计">系统设计</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "索引">索引</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/11/18/RSIC-V-RV32I-Instruction-Set/" >
-            
-                <span>RSIC-V RV32I Instruction Set</span>
-        </a>
-        <div class="abstract-content">
-            1. Instruction LengthRISC-V指令是定长的32bit，但是拓展可以支持变长。变长一定是16bit的整数倍。
-encoding convension要求所有32bit指令长度的命令最低两位一定是11. 注意RISC-V是小端的指令集。对于&gt;32bit长度的指令格式，同样要求满足这个要求，因此对于16bit指令长度，要求最低两位一定不是11。
-当然对于non-standard指令格式，RISC-V可以是大端的。 
-2. RV32IRV32I是最基础的指令集，也是任何RISC-V实现必须实现的指令集。RV32I包括了47条独特指令，另外，实现可以选择使用总是tra...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/18</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro,RISC-V,ISA">Micro,RISC-V,ISA</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/11/18/wild-pig-chapter2/" >
-            
-                <span>野猪书第二章读书笔记</span>
-        </a>
-        <div class="abstract-content">
-            1. 模型
-层次化模型(hierachy)
-树状结构 -&gt; keep one-to-many or many-to-one
-no many-to-many
-
-
-关系化模型 -&gt; sql
-范式
-在复杂的或者多层的one-to-many结构中需要拆成多张表
-
-
-文档化模型(document) -&gt; json
-一列中可以保存复杂结构的数据
-比如列表形式的历史记录
-对于不复杂的one-to-many特别适合
-但是对于many-to-many不是那么有优势
-join不是那么友好，许多数据库都不支持join
-
-
-网络化模型(network)
-图状结构,many-to-many
-搜索...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/18</span>
-            </div>
-            <!-- tags  -->
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/" >
-            
-                <span>RISC-V 寄存器 overview</span>
-        </a>
-        <div class="abstract-content">
-            1. OverviewRISC-V顾名思义是一个RISC指令集，有一些特性（特别和x86相比）：
-
-大量的寄存器
-固定为0的寄存器(x0): “零寄存器”（zero register，注：其值永远为零）
-非load和save指令不能访问内存，只能在寄存器间操作
-不提供context save和restore的命令
-所有指令都是固定长度的32bit
-
-指令长度固定32bit使得处理64bit的立即数，一定至少要两条指令。
-1.1. 指令集和拓展RISC-V指令集最基本的指令只包含integer instruction，包括RV32I和RV64I。其中RV32I是社区声明过已经冻结修改的。（...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/17</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "RISC-V">RISC-V</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/11/14/ARM-Register-Quick-View/" >
-            
-                <span>ARM ISA Overview</span>
-        </a>
-        <div class="abstract-content">
-            1. 指令ARM中能看到的指令集包括：
-
-thumb: 16bit的指令集
-thumb-2: thumb的升级版，16bit/32bit混合指令集
-arm: 32bit的指令集
-A32: ARMv8中的arm指令集
-T32: ARMv8中的thumb-2指令集，同时包含一些拓展
-A64: ARMv8的64bit的指令集
-Neon: ARM的SIMD指令集
-
-
-ARMv8支持两种state：
-
-AArch64: 使用A64指令集，一种32bit fix length的指令集
-支持31个64bit的通用寄存器
-使用64bit的PC和SP寄存器
-支持32个128bit的SIMD寄存器
-
-
-AA...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/14</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "LLVM">LLVM</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "ARM">ARM</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Micro">Micro</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    
-    
-    
-    
-    
-    <article class="index-post">
-        <a class="abstract-title" href = "/2019/11/12/wild-pig-chapter1/" >
-            
-                <span>野猪书第一章读书笔记</span>
-        </a>
-        <div class="abstract-content">
-            数据密集型应用系统
-数据库
-高速缓存
-索引
-流式处理
-批处理
-
-这里比较有意思的是索引，一般而言，索引不会单独领出来说，往往集成在数据库中。但实际上索引也许可以单独作为一个组件存在。而这些组件往往也不是独立存在，比如Es就包含了前三部分。
-另外，现在的数据体系中，不会是单独一个组件而存在，而是多个组件或者说上述所有组件的共同合作结果。
-比如一个响应用户请求的系统：
-
-需要一个高速缓存来快速响应某些通用请求
-需要一个数据库来存储所有的信息
-需要一个全文索引来方便查找
-需要一个消息队列来处理异步任务
-
-三个系统设计关键问题
-可靠性
-提供客户需要的功能
-容忍客户错误或者不正确的操作
-足够强的性...
-        </div>
-        <div class="abstract-post-meta">
-            <!-- date  -->
-            <div class="abstract-date">
-                <span class="abstract-calander iconfont-archer">&#xe676;</span><span class="abstract-time">2019/11/12</span>
-            </div>
-            <!-- tags  -->
-            
-            <div class= abstract-tags >
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "Storage">Storage</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "数据库">数据库</a>
-    
-        <a class="post-tag" href="javascript:void(0);" target="_blank" rel="noopener" data-tags = "系统设计">系统设计</a>
-    
-</div>
-            
-        </div>
-    </article>
-    
-    <!-- paginator  -->
-    
-</main>
-            <!-- profile -->
-            
-            <div class="profile">
-    <img class="profile-avatar" alt="avatar" src= /avatar/portrait.jpg >
-    <div class="profile-name">leozhou</div>
-    
-    <div class="profile-signature">
-        Lovely baby PAN
-    </div>
-    
-    
-    <div class="profile-social">
-        
-    
-        
-            
-                <a href="mailto:july24lynna@gmail.com" target="_blank" rel="noopener" class="iconfont-archer email" title=email ></a>
-            
-        
-    
-        
-            
-                <a href="https://github.com/tinytinymelon" class="iconfont-archer github" target="_blank" title=github></a>
-            
-        
-    
-        
-            
-                <span class="iconfont-archer wechat" title=wechat>
-                  
-                  <img class="profile-qr" src="/assets/example_qr.png" />
-                </span>
-            
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-
-    </div>
-    
-    
-    
-        <div class="about-me">
-            <a href = "/about" >ABOUT ME</a>
-        </div>
-    
-</div>
-            
-        </div>
-        <footer class="footer footer-unloaded">
-    <!-- social  -->
-    
-    <div class="social">
-        
-    
-        
-            
-                <a href="mailto:july24lynna@gmail.com" target="_blank" rel="noopener" class="iconfont-archer email" title=email ></a>
-            
-        
-    
-        
-            
-                <a href="https://github.com/tinytinymelon" class="iconfont-archer github" target="_blank" title=github></a>
-            
-        
-    
-        
-            
-                <span class="iconfont-archer wechat" title=wechat>
-                  
-                  <img class="profile-qr" src="/assets/example_qr.png" />
-                </span>
-            
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-        
-    
-
-    </div>
-    
-    <!-- powered by Hexo  -->
-    <div class="copyright">
-        <span id="hexo-power">Powered by <a href="https://hexo.io/" target="_blank">Hexo</a></span><span class="iconfont-archer power">&#xe635;</span><span id="theme-info">theme <a href="https://github.com/fi3ework/hexo-theme-archer" target="_blank">Archer</a></span>
-    </div>
-    <!-- 不蒜子  -->
-    
-    <div class="busuanzi-container">
-    
-     
-    <span id="busuanzi_container_site_pv">PV: <span id="busuanzi_value_site_pv"></span> :)</span>
-    
-    </div>
-    
-</footer>
-    </div>
-    <!-- toc -->
-    
-    <div class="back-top iconfont-archer">&#xe639;</div>
-    <div class="sidebar sidebar-hide">
-    <ul class="sidebar-tabs sidebar-tabs-active-0">
-        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
-        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
-        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
-    </ul>
-    <div class="sidebar-content sidebar-content-show-archive">
-          <div class="sidebar-panel-archives">
-    <!-- 在ejs中将archive按照时间排序 -->
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <div class="total-and-search">
-        <div class="total-archive">
-        Total : 9
-        </div>
-        <!-- search  -->
-        
-    </div>
-    
-    <div class="post-archive">
-    
-    
-    
-    
-    <div class="archive-year"> 2019 </div>
-    <ul class="year-list">
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">12/11</span><a class="archive-post-title" href= "/2019/12/11/Compile-LLVM-Clang-Ubuntu-18-04/" >Compile LLVM & Clang @ Ubuntu 18.04</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">12/07</span><a class="archive-post-title" href= "/2019/12/07/wild-pig-chapter-4-5-6/" >野猪书第四，五，六章读书笔记</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">12/05</span><a class="archive-post-title" href= "/2019/12/05/Linux-Interrupt-Part-1/" >Linux Interrupt Part 1</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">11/21</span><a class="archive-post-title" href= "/2019/11/21/wild-pig-chapter3/" >野猪书第三章读书笔记</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">11/18</span><a class="archive-post-title" href= "/2019/11/18/RSIC-V-RV32I-Instruction-Set/" >RSIC-V RV32I Instruction Set</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">11/18</span><a class="archive-post-title" href= "/2019/11/18/wild-pig-chapter2/" >野猪书第二章读书笔记</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">11/17</span><a class="archive-post-title" href= "/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/" >RISC-V 寄存器 overview</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">11/14</span><a class="archive-post-title" href= "/2019/11/14/ARM-Register-Quick-View/" >ARM ISA Overview</a>
-        </li>
-    
-    
-        <li class="archive-post-item">
-            <span class="archive-post-date">11/12</span><a class="archive-post-title" href= "/2019/11/12/wild-pig-chapter1/" >野猪书第一章读书笔记</a>
-        </li>
-    
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">梅子黄时雨</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
     </div>
   </div>
-        <div class="sidebar-panel-tags">
-    <div class="sidebar-tags-name">
-    
-        <span class="sidebar-tag-name" data-tags="LLVM"><span class="iconfont-archer">&#xe606;</span>LLVM</span>
-    
-        <span class="sidebar-tag-name" data-tags="Build"><span class="iconfont-archer">&#xe606;</span>Build</span>
-    
-        <span class="sidebar-tag-name" data-tags="ARM"><span class="iconfont-archer">&#xe606;</span>ARM</span>
-    
-        <span class="sidebar-tag-name" data-tags="Micro"><span class="iconfont-archer">&#xe606;</span>Micro</span>
-    
-        <span class="sidebar-tag-name" data-tags="Linux"><span class="iconfont-archer">&#xe606;</span>Linux</span>
-    
-        <span class="sidebar-tag-name" data-tags="Interrupt"><span class="iconfont-archer">&#xe606;</span>Interrupt</span>
-    
-        <span class="sidebar-tag-name" data-tags="RISC-V"><span class="iconfont-archer">&#xe606;</span>RISC-V</span>
-    
-        <span class="sidebar-tag-name" data-tags="Storage"><span class="iconfont-archer">&#xe606;</span>Storage</span>
-    
-        <span class="sidebar-tag-name" data-tags="数据库"><span class="iconfont-archer">&#xe606;</span>数据库</span>
-    
-        <span class="sidebar-tag-name" data-tags="系统设计"><span class="iconfont-archer">&#xe606;</span>系统设计</span>
-    
-        <span class="sidebar-tag-name" data-tags="系统设计，分布式"><span class="iconfont-archer">&#xe606;</span>系统设计，分布式</span>
-    
-        <span class="sidebar-tag-name" data-tags="Micro,RISC-V,ISA"><span class="iconfont-archer">&#xe606;</span>Micro,RISC-V,ISA</span>
-    
-        <span class="sidebar-tag-name" data-tags="索引"><span class="iconfont-archer">&#xe606;</span>索引</span>
-    
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
     </div>
-    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
-    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
-    缺失模块。<br/>
-    1、请确保node版本大于6.2<br/>
-    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
-    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
-    3、在根目录_config.yml里添加配置：
-    <pre style="color: #787878; font-size: 0.6rem;">
-jsonContent:
-  meta: false
-  pages: false
-  posts:
-    title: true
-    date: true
-    path: true
-    text: false
-    raw: false
-    content: false
-    slug: false
-    updated: false
-    comments: false
-    link: false
-    permalink: false
-    excerpt: false
-    categories: true
-    tags: true</pre>
-    </div> 
-    <div class="sidebar-tags-list"></div>
+  </div>
 </div>
-        <div class="sidebar-panel-categories">
-    <div class="sidebar-categories-name">
-    
-    </div>
-    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
-    <div class="sidebar-categories-list"></div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+  </ul>
+
+</nav>
 </div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/16/Compile-LLVM-Clang-Windows/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/12/16/Compile-LLVM-Clang-Windows/" class="post-title-link" itemprop="url">Compile LLVM & Clang @ Windows</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2019-12-16 22:18:07 / Modified: 23:06:36" itemprop="dateCreated datePublished" datetime="2019-12-16T22:18:07+08:00">2019-12-16</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-Prepare-Environment"><a href="#1-Prepare-Environment" class="headerlink" title="1. Prepare Environment"></a>1. Prepare Environment</h1><p>We need :</p>
+<ul>
+<li><strong>cmake</strong>: <a href="https://cmake.org/download/" target="_blank" rel="noopener">https://cmake.org/download/</a>, choose windows version</li>
+<li><strong>git</strong>: <a href="https://git-scm.com/download/win" target="_blank" rel="noopener">https://git-scm.com/download/win</a></li>
+<li><strong>Visual Studio 2019</strong>: <a href="https://visualstudio.microsoft.com/" target="_blank" rel="noopener">https://visualstudio.microsoft.com/</a>, Community Version is enough </li>
+</ul>
+<h1 id="2-Clone-LLVM-project"><a href="#2-Clone-LLVM-project" class="headerlink" title="2. Clone LLVM project"></a>2. Clone LLVM project</h1><p>Two ways to get LLVM project source code</p>
+<ul>
+<li>git clone —config core.autocrlf=false <a href="https://github.com/llvm/llvm-project.git" target="_blank" rel="noopener">https://github.com/llvm/llvm-project.git</a></li>
+<li>download source code from : <a href="http://releases.llvm.org/download.html" target="_blank" rel="noopener">http://releases.llvm.org/download.html</a></li>
+</ul>
+<p>However, the second way needs you</p>
+<ul>
+<li>put clang source code into llvm/tools with folder name as <code>clang</code></li>
+<li>the build script will check if the folder existed and build clang project at same time if so</li>
+</ul>
+<p>The first way needs to add <code>-DLLVM_ENABLE_PROJECTS</code> flags to enable related project, the project could be <code>clang, clang-tools-extra, libcxx, libcxxabi, libunwind, lldb, compiler-rt, lld, polly, or debuginfo-test</code>.</p>
+<h1 id="3-Use-CMake-to-generated-sln-file"><a href="#3-Use-CMake-to-generated-sln-file" class="headerlink" title="3. Use CMake to generated .sln file"></a>3. Use CMake to generated .sln file</h1><p>use first one as example:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd llvm-project</span><br><span class="line">mkdir build</span><br><span class="line">cd build</span><br><span class="line"></span><br><span class="line">cmake -G &lt;generator&gt; [options] ../llvm</span><br></pre></td></tr></table></figure>
+<p>Based on Visual Studio version you installed, the <code>generator</code> could be:</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th><generator></th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Visual Studio 16 2019</strong></td>
+<td>Generates Visual Studio 2019 project files. Use -A option to specify architecture.</td>
+</tr>
+<tr>
+<td><strong>Visual Studio 15 2017 [arch]</strong></td>
+<td>Generates Visual Studio 2017 project files. Optional [arch] can be “Win64” or “ARM”.</td>
+</tr>
+<tr>
+<td><strong>Visual Studio 14 2015 [arch]</strong></td>
+<td>Generates Visual Studio 2015 project files. Optional [arch] can be “Win64” or “ARM”.</td>
+</tr>
+<tr>
+<td><strong>Visual Studio 12 2013 [arch]</strong></td>
+<td>Generates Visual Studio 2013 project files. Optional [arch] can be “Win64” or “ARM”.</td>
+</tr>
+<tr>
+<td><strong>Visual Studio 11 2012 [arch]</strong></td>
+<td>Generates Visual Studio 2012 project files. Optional [arch] can be “Win64” or “ARM”.</td>
+</tr>
+<tr>
+<td><strong>Visual Studio 10 2010 [arch]</strong></td>
+<td>Generates Visual Studio 2010 project files. Optional [arch] can be “Win64” or “IA64”.</td>
+</tr>
+<tr>
+<td><strong>Visual Studio 9 2008 [arch]</strong></td>
+<td>Generates Visual Studio 2008 project files. Optional [arch] can be “Win64” or “IA64”.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>It will take some time to generate related <code>LLVM.sln</code> file in folder <code>builder</code>.</p>
+<h1 id="4-Open-Project-and-Compile"><a href="#4-Open-Project-and-Compile" class="headerlink" title="4. Open Project and Compile"></a>4. Open Project and Compile</h1><p>Now you could open the <code>LLVM.sln</code>, Visual Studio will automatically load all related resources to build up the LLVM project.</p>
+<p>Normally, it will take a long time (&gt;1.5h) to build up whole project in Vistual Studio. After it done its work, you could get the <code>clang</code>/<code>llc</code> binary in one debug output folder.</p>
+<p>It’s a good choice to have a meal after you start the building process and check it when you’ve enjoied the dinner. :)</p>
+<p>Have a wonderful time in LLVM world.</p>
+
+      
     </div>
-</div> 
-    <script>
-    var siteMeta = {
-        root: "/",
-        author: "Leo Zhou"
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/11/Compile-LLVM-Clang-Ubuntu-18-04/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/12/11/Compile-LLVM-Clang-Ubuntu-18-04/" class="post-title-link" itemprop="url">Compile LLVM & Clang @ Ubuntu 18.04</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2019-12-11 21:34:54 / Modified: 22:07:53" itemprop="dateCreated datePublished" datetime="2019-12-11T21:34:54+08:00">2019-12-11</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="1-Prepare-Environment"><a href="#1-Prepare-Environment" class="headerlink" title="1. Prepare Environment"></a>1. Prepare Environment</h2><p>Use <code>apt</code> to install required pakcage:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt upgrade</span><br><span class="line"></span><br><span class="line">sudo apt install build-essential cmake python3-dev libncurses5-d make</span><br></pre></td></tr></table></figure>
+<h2 id="2-Download-the-source-code"><a href="#2-Download-the-source-code" class="headerlink" title="2. Download the source code"></a>2. Download the source code</h2><p>You may clone it from github, containting latest code and being able to upstream:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/llvm/llvm-project.git</span><br></pre></td></tr></table></figure>
+<p>However, it will contain all history and dev code, leading to long time when downloading the source code.</p>
+<p>If network status is poor, better to download each latest source code for llvm and clang in <a href="http://releases.llvm.org/download.html" target="_blank" rel="noopener">LLVM Download Page</a>.</p>
+<p>Take LLVM 9.0 as example:</p>
+<ul>
+<li><a href="http://releases.llvm.org/9.0.0/llvm-9.0.0.src.tar.xz" target="_blank" rel="noopener">LLVM Source Code</a></li>
+<li><a href="http://releases.llvm.org/9.0.0/cfe-9.0.0.src.tar.xz" target="_blank" rel="noopener">Clang source code</a></li>
+</ul>
+<p>You will get two tar.gz:</p>
+<ul>
+<li>llvm-9.0.0.src.tar.xz</li>
+<li>cfe-9.0.0.src.tar.xz</li>
+</ul>
+<p>Clang source code should put into folder <code>${LLVM_SOURCE_CODE}/tools/clang</code>(checking INSTALL.txt in clang source file).</p>
+<p>the final path as:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">llvm-9.0.0-src</span><br><span class="line">  ...</span><br><span class="line">  |- tools</span><br><span class="line">  ...</span><br><span class="line">     |- clang (renamed from cfe-9.0.0)</span><br></pre></td></tr></table></figure>
+<h2 id="3-Build-Code"><a href="#3-Build-Code" class="headerlink" title="3. Build Code"></a>3. Build Code</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br><span class="line"></span><br><span class="line">cmake -G &quot;Unix Makefiles&quot; ../llvm-9.0.0-src</span><br></pre></td></tr></table></figure>
+<p>It will scan CMakefiles.txt, automatically involving clang project.</p>
+<h2 id="4-Check-Result"><a href="#4-Check-Result" class="headerlink" title="4. Check Result"></a>4. Check Result</h2><p><code>bin</code> folder will be found in <code>build</code> folder. Setup the Path in ~/.bashrc :</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">export PATH=$&#123;BUILD_FOLDER&#125;/bin:$&#123;PATH&#125;</span><br></pre></td></tr></table></figure>
+<p>Then <code>source ~/.bahsrc</code>. Now checking with command <code>clang</code> and <code>llc</code>.</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/07/wild-pig-chapter-4-5-6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/12/07/wild-pig-chapter-4-5-6/" class="post-title-link" itemprop="url">野猪书第四，五，六章读书笔记</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2019-12-07 23:03:30 / Modified: 23:05:04" itemprop="dateCreated datePublished" datetime="2019-12-07T23:03:30+08:00">2019-12-07</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="第四章：Overview"><a href="#第四章：Overview" class="headerlink" title="第四章：Overview"></a>第四章：Overview</h1><p>数据结构需要改动时候，一般需要更新代码或者内部数据结构，此时会碰到两个问题：</p>
+<ul>
+<li>滚动更新数据库相对复杂</li>
+<li>依赖客户更新不可靠</li>
+</ul>
+<p>这种情况下，新旧数据会同时存在系统中，需要双向兼容：</p>
+<ul>
+<li>向后兼容：新代码可以读取旧数据</li>
+<li>向前兼容：旧代码可以读取新数据</li>
+</ul>
+<h1 id="语言内置编码方案问题"><a href="#语言内置编码方案问题" class="headerlink" title="语言内置编码方案问题"></a>语言内置编码方案问题</h1><ul>
+<li>和语言绑定的编码方案往往是语言specified</li>
+<li>对象的序列化和反序列化往往需要跳过一些安全check，注入恶意代码变得有可能。比如在java默认构造函数中注入代码。</li>
+<li>不同版本之间的实现往往是不兼容的，最明显的就是Java的jackson系列json序列化lib</li>
+<li>性能也往往不是这些lib着重考虑的因素</li>
+</ul>
+<h1 id="数据流转方式"><a href="#数据流转方式" class="headerlink" title="数据流转方式"></a>数据流转方式</h1><ul>
+<li>通过数据库</li>
+<li>通过service call: Rest and RPC</li>
+<li>通过异步message发送<ul>
+<li>缓冲区更好的可靠性</li>
+<li>自动重发</li>
+<li>message queue隐藏发送方信息</li>
+<li>多个接收方</li>
+<li>解耦发送和接收方，通过message queue</li>
+</ul>
+</li>
+</ul>
+<h1 id="第五章：Overview"><a href="#第五章：Overview" class="headerlink" title="第五章：Overview"></a>第五章：Overview</h1><p>replication考虑因素</p>
+<ul>
+<li>single leader, multi leader and leaderless<ul>
+<li>单主节点：只有一个节点负责写入</li>
+<li>多主节点：多节点写入</li>
+<li>无主节点：所有节点都可以写入</li>
+</ul>
+</li>
+<li>数据一致性方式：synchronous或者asynchronous<ul>
+<li>可以一个节点同步，保证已经额外有一份copy，然后其他的进行异步同步，也可以叫半同步</li>
+</ul>
+</li>
+<li>handle failed replica</li>
+<li>read-your-writes and mono‐ tonic reads guarantees.</li>
+</ul>
+<h1 id="CS模式"><a href="#CS模式" class="headerlink" title="CS模式"></a>CS模式</h1><h2 id="配置新节点"><a href="#配置新节点" class="headerlink" title="配置新节点"></a>配置新节点</h2><ul>
+<li>一般使用snapshot的方式来配置新的节点</li>
+<li>然后通过数据更新日志来更新新节点</li>
+</ul>
+<h2 id="处理节点失效"><a href="#处理节点失效" class="headerlink" title="处理节点失效"></a>处理节点失效</h2><ul>
+<li>追赶式恢复 -&gt; 通过磁盘的日志</li>
+<li>基于语句的复制 -&gt; 比如记录输入的SQL语句<ul>
+<li>now()，random()等函数是非确定的</li>
+<li>自递增的column不适适用</li>
+<li>where等语句效果取决于数据情况</li>
+<li>带副作用的操作，比如触发器，用户定义函数</li>
+</ul>
+</li>
+<li>基于预写日志(WAL)传输<ul>
+<li>日志即存储，日志结构的存储引擎（SSTables和LSM-trees）</li>
+<li>覆盖型的写入(B-tree)，日志作为内存中，尚未刷入磁盘的备份</li>
+</ul>
+</li>
+<li>基于行的逻辑日志复制<ul>
+<li>一系列记录数据行级，但是更加详细和准确的描述，比如mysql的binlog</li>
+</ul>
+</li>
+<li>基于触发器的复制 -&gt; 类似event</li>
+</ul>
+<h2 id="复制滞后的问题"><a href="#复制滞后的问题" class="headerlink" title="复制滞后的问题"></a>复制滞后的问题</h2><ul>
+<li>读自己的写 -&gt; 也就是所谓的写后读，写完以后进行读取，此时可能读取到一个尚未得到更新数据的节点<ul>
+<li>目标就是：读写一致性</li>
+<li>记录节点更新时间</li>
+<li>引入最后请求时间戳</li>
+</ul>
+</li>
+<li>单调读 -&gt; 两次从不同的两个节点可能读到不同的数据<ul>
+<li>始终保持在一个节点上读，除非节点失效，保证不会一次读取新的以后再另外一个节点读到旧的数据。</li>
+<li>单调读一致性</li>
+</ul>
+</li>
+<li>前缀一致读：一系列的数据读取得到的数据顺序和写入顺序保持一致<ul>
+<li>不相关的数据读取顺序不需要和写入顺序一致</li>
+<li>解决方法之一：相关数据由同一节点处理</li>
+</ul>
+</li>
+</ul>
+<h1 id="多主节点"><a href="#多主节点" class="headerlink" title="多主节点"></a>多主节点</h1><h2 id="避免冲突"><a href="#避免冲突" class="headerlink" title="避免冲突"></a>避免冲突</h2><ul>
+<li>类似于hash，相同或者类同数据只在一个节点处理</li>
+<li>给每一个写都带一个UUID</li>
+<li>自定义冲突解决逻辑：<ul>
+<li>在写入时候解决，写入时候发现冲突要求解决</li>
+<li>在读取时候解决，返回多个可能结果，让用户自己选择</li>
+</ul>
+</li>
+<li>自动冲突解决：<ul>
+<li>无冲突的复制数据类型</li>
+<li>可合并的持久数据结果</li>
+<li>操作转换</li>
+</ul>
+</li>
+</ul>
+<h1 id="无主节点复制"><a href="#无主节点复制" class="headerlink" title="无主节点复制"></a>无主节点复制</h1><p>还是多看论文把。</p>
+<h1 id="第六章：数据分区"><a href="#第六章：数据分区" class="headerlink" title="第六章：数据分区"></a>第六章：数据分区</h1><p>分区定义：每一条数据只属于某个特定的分区。</p>
+<p>如何分区</p>
+<ul>
+<li>随机分发分区 -&gt; 代价是每次查询都需要扫描全局</li>
+<li>基于关键字分区<ul>
+<li>首先对关键字进行排序，分段进行分区</li>
+<li>内部可以使用SSTables和LSM-Trees保存</li>
+<li>不合适的关键字选择容易出现热点节点</li>
+</ul>
+</li>
+<li>基于hash分区<ul>
+<li>不支持range搜索 -&gt; 容易退化成全局搜索</li>
+<li>折衷 -&gt; 复合主键<ul>
+<li>一个键做hash，其他作为排序</li>
+</ul>
+</li>
+<li>所以核心就是选择合适的key作为hash</li>
+<li>一致性哈希</li>
+</ul>
+</li>
+</ul>
+<h1 id="分区和二级索引"><a href="#分区和二级索引" class="headerlink" title="分区和二级索引"></a>分区和二级索引</h1><p>二级索引索引就是非主键索引以外的索引，而主键索引一般是作为分区来作用的。</p>
+<p>很多数据库不支持二级索引，比如HBase。</p>
+<p>有两种主要的方法来支持二级索引的分区</p>
+<ul>
+<li>基于文档的分区<ul>
+<li>各个分区独自保存自己的二级索引</li>
+<li>实现简单，写快，但是读时候性能难讲</li>
+<li>更加类似于分区local的二级索引</li>
+</ul>
+</li>
+<li>基于词条的分区<ul>
+<li>基于全局进行索引build</li>
+<li>同时对这个索引构建主键进行分区操作</li>
+<li>写时候性能变差，但是读的时候优势</li>
+<li>更新异步的话，可以减少写性能损失</li>
+</ul>
+</li>
+</ul>
+<p>分区调整：</p>
+<ul>
+<li>固定数据数量</li>
+<li>动态分区</li>
+<li>按节点比例分区</li>
+</ul>
+<h1 id="请求路由"><a href="#请求路由" class="headerlink" title="请求路由"></a>请求路由</h1><p>三种方式client到数据节点：</p>
+<ul>
+<li>随机选择一个节点，如果不对，那么节点进行转发</li>
+<li>中间有一层路由层，了解所有分区信息，然后进行转发</li>
+<li>客户端自己有所有分区信息，直接读取节点</li>
+</ul>
+<h1 id="并行查询执行"><a href="#并行查询执行" class="headerlink" title="并行查询执行"></a>并行查询执行</h1><p>多个或者复杂的查询可以拆分成更加fragement的操作，分到不同的节点，提高性能。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/05/Linux-Interrupt-Part-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/12/05/Linux-Interrupt-Part-1/" class="post-title-link" itemprop="url">Linux Interrupt Part 1</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-12-05 22:49:18" itemprop="dateCreated datePublished" datetime="2019-12-05T22:49:18+08:00">2019-12-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-16 23:09:22" itemprop="dateModified" datetime="2019-12-16T23:09:22+08:00">2019-12-16</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-中断设计constrains"><a href="#1-中断设计constrains" class="headerlink" title="1. 中断设计constrains"></a>1. 中断设计constrains</h1><ul>
+<li>中断应该是尽量能够快速响应的，否则类似网络传输的数据可能丢失<ul>
+<li>因此linux将中断处理设计成了urgent的部分+可以defer处理的部分 </li>
+</ul>
+</li>
+<li>中断处理必须考虑重入问题，在处理一个中断时候处理其他中断</li>
+<li>中断可以被屏蔽的，disabled</li>
+</ul>
+<h1 id="2-中断和异常"><a href="#2-中断和异常" class="headerlink" title="2. 中断和异常"></a>2. 中断和异常</h1><p>中断(interrupt)</p>
+<ul>
+<li>可屏蔽中断(Maskable interrupts)<ul>
+<li>所有Device触发的Interrupt Requests(IRQs)都是可屏蔽中断</li>
+</ul>
+</li>
+<li>不可屏蔽中断(Nonmaskable interrupts)<ul>
+<li>一些重要的events(比如硬件故障)是不可屏蔽中断</li>
+</ul>
+</li>
+</ul>
+<p>异常(exception)</p>
+<ul>
+<li><p>Processor-detected exceptions: Generated when the CPU detects an anomalous condition when execution instruction. 进一步的细分成三种：</p>
+<ul>
+<li>Faults: 可恢复，返回当前运行的指令。跳转到前的指令存在EIP中</li>
+<li>Traps: 回到下一条指令继续运行</li>
+<li>Aborts: process只能被terminated，不过可以在这里检索错误现场</li>
+</ul>
+</li>
+<li><p>可编程的异常(Programmed exceptions):  Occur at the request of the programmer.</p>
+<ul>
+<li>比如INT指令或者INT 3</li>
+<li>into或者bound指令失败时候也会触发</li>
+<li>一般被叫做software interrupts</li>
+<li>一般用作系统调用或者debug</li>
+</ul>
+</li>
+</ul>
+<p>所有中断和异常使用unsigned 8bits来作为index，这个值被intel称为vector。</p>
+<h1 id="3-IRQs-and-Interrupts"><a href="#3-IRQs-and-Interrupts" class="headerlink" title="3. IRQs and Interrupts"></a>3. IRQs and Interrupts</h1><p>所有的device controller都可以被指定一条或者多条Interrupt<br> ReQest(IRQ) line. 所有existing IRQ lines都被绑定到专用硬件的input pins上。这个硬件叫Programmable Interrupt Controller(可编程中断控制器)。</p>
+<p> PIC的具体流程如下：</p>
+<ol>
+<li>检测所有连接的IRQ lines是否有raised signals。如果有多个IRQ lines被raised，那么选择lower pin的number。</li>
+<li>如果有IRQ line被raise<ul>
+<li>convert raised signal to对应的vector</li>
+<li>将vector保存在一个Interrupt Controller I/O port，这使得cpu可以通过data bus读到这个vector</li>
+<li>send一个raised signal到CPU的INTR pin，触发一个中断</li>
+<li>等待cpu acknowldege the interrupt signal by writting into one of the Programmable Interrupt Controllers(PIC) I/O ports. 在此之后，clear INTR line.</li>
+</ul>
+<ol>
+<li>回到step 1</li>
+</ol>
+</li>
+</ol>
+<p>IRQ定义从0开始，也就是IRQ0，对应的intel的vector值从32开始。但是具体的对应的关系，是可以通过编程来定义的。</p>
+<p>IRQ的line是可以选择性的ignored，但是对应的signal不会被丢失，会在un-ingore时候触发该有的操作。</p>
+<p>注意，这里的ignore和可屏蔽的中断的屏蔽是两个概念。EFLAGS中的IF flag的屏蔽和恢复(cli and sti)都是针对于所有IRQ lines。</p>
+<p>最早的PIC设备是2片8259A芯片，支持15个IRQs(主片的IRQ2 pin接到了从片上)。同时8259A芯片不支持多核（SMP）。</p>
+<h1 id="4-APIC-Advanced-Programmable-Interrupt-Controller"><a href="#4-APIC-Advanced-Programmable-Interrupt-Controller" class="headerlink" title="4. APIC (Advanced Programmable Interrupt Controller)"></a>4. APIC (Advanced Programmable Interrupt Controller)</h1><p>为了支持SMP，引入了APIC，包括：</p>
+<ul>
+<li>local APIC，包含LINT0和LINT1两个pin接口，在模拟8259A芯片时候，可以一个作为INTR，一个作为NMI。</li>
+<li>I/O APIC，作为对接设备的LB存在，负责接收device， controller的singal，然后负责分发。也能模拟8259A芯片。</li>
+<li>可编程，提供复杂的IRQ和vector的映射关系</li>
+<li>同时通过各自的Interrupt Command Register(ICR)，各个core之间也可以相互发送消息（中断），称为interprocessor interrupt (IPIs)</li>
+<li>I/O APIC的分发可以是static的（类似affinity），也可以使用round robin的方式。</li>
+</ul>
+<h1 id="5-Required-Exceptions"><a href="#5-Required-Exceptions" class="headerlink" title="5. Required Exceptions"></a>5. Required Exceptions</h1><p>vector最小的一系列exception(0-19)是intel定义，并且每个os都必须又对应的handler进行处理的。linux对于这些exception，每个注册了对应的exeption handler，这些handler大部分最终会send相对应的SIGNAL来方便其他程序监听和处理。比较有意思的几个如下：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Exception</th>
+<th>Exception handler</th>
+<th>Signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14</td>
+<td>Page Fault</td>
+<td>page_fault( )</td>
+<td>SIGSEGV</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Alignment</td>
+<td>check alignment_check( )</td>
+<td>SIGBUS</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id="6-IDT"><a href="#6-IDT" class="headerlink" title="6. IDT"></a>6. IDT</h1><p>IDT中可以保存三类gate：</p>
+<ul>
+<li><strong>Task Gate</strong>：保存了一个TSS的段选择器，简单来说就是当这个exception handler被触发时候，会发生task的切换来进行处理</li>
+<li><strong>Interrupt Gate</strong>：保存普通的段选择器+offset，用来指向对应的处理代码入口；Interrupt Gate触发时候会clear IF flag来屏蔽中断。</li>
+<li><strong>Trap Gate</strong>：和Interrupt Gate一样，保存普通的段选择器+offset，但是不会屏蔽中断</li>
+</ul>
+<p>总体来说，Linux uses interrupt gates to handle interrupts and trap gates to handle exceptions.</p>
+<h1 id="7-Interrupt-Trigger-Process"><a href="#7-Interrupt-Trigger-Process" class="headerlink" title="7. Interrupt Trigger Process"></a>7. Interrupt Trigger Process</h1><p>Trigger process</p>
+<ol>
+<li>从GDTR获取GDT的信息，然后取得对应的段描述符</li>
+<li>比较权限，需要满足下述条件，否则throw “General Protection”:<ul>
+<li>对于非用户触发的Interrupt，CPL &lt;= DPL，也就是说interrupt handler权限要不小于触发中断的程序的权限，否则无法进行处理中断。</li>
+<li>对于用户触发的Interrupt，需要CPL =&gt; DPL，也就是说用户的权限要不小于触发的handler的权限，否则用户可以去调用其他的interrupt或者trap gate。</li>
+</ul>
+</li>
+<li>如果CPL和DPL的权限不同，那就需要切换到DPL对应级别的TSS和Stack上<ul>
+<li>首先读取当前的ss和esp信息（当前stack信息）</li>
+<li>从需要切换到对象的TSS中读取对应的ss和esp信息</li>
+<li>将当前的ss和esp信息保存在切换后的stack中</li>
+</ul>
+</li>
+<li>如果是fault，那么需要同时需要保存cs和eip，等待handler后返回现场（逻辑地址）；最后保存eflags。如果有hardware error code，同样保存在stack上。</li>
+<li>从段描述符中读取基地址，加上offset，得到目标逻辑地址并设置cs和eip，开始执行interrupt handler。</li>
+</ol>
+<p>在interrupt handler完成工作后，需要返回到原有的进程中，一般通过iret命令，其包括如下的操作：</p>
+<ol>
+<li>从当前stack上获取cs，eip和eflags。</li>
+<li>如果权限之前发生过切换，那么需要恢复到原有的stack上，ss和esp同样保存在interrupt handler的stack上</li>
+<li>恢复stack，恢复cs，eip和eflags</li>
+<li>检查ds，es，fs和gs的DPL是否小于恢复后的CPL，如果是，那么进行清空。这是以防用户进程获取的系统权限级别的段描述符。</li>
+</ol>
+<h1 id="8-Interrupt-Gate"><a href="#8-Interrupt-Gate" class="headerlink" title="8. Interrupt Gate"></a>8. Interrupt Gate</h1><p>Gate类型：</p>
+<ul>
+<li><strong>Interrupt gate</strong><ul>
+<li>DPL = 0</li>
+<li>处理内部的中断(interrupt)</li>
+</ul>
+</li>
+<li><strong>System gate</strong><ul>
+<li>DPL = 3</li>
+<li>vector 4(into), 5(bound)和128(int 0x80)使用这个gate</li>
+</ul>
+</li>
+<li><strong>System interrupt gate</strong><ul>
+<li>DPL = 3</li>
+<li>int3, User Mode的Debug</li>
+</ul>
+</li>
+<li><strong>Trap gate</strong><ul>
+<li>DPL = 0</li>
+<li>大部分内部异常(exception)依赖于这个</li>
+</ul>
+</li>
+<li><strong>Task gate</strong><ul>
+<li>DPL = 0</li>
+<li>handle double fault</li>
+</ul>
+</li>
+</ul>
+<h1 id="9-IDT初始化"><a href="#9-IDT初始化" class="headerlink" title="9. IDT初始化"></a>9. IDT初始化</h1><p>5.4 kernel中和UTLK中的实现已经有所不同了</p>
+<h2 id="9-1-legacy-mode"><a href="#9-1-legacy-mode" class="headerlink" title="9.1. legacy mode"></a>9.1. legacy mode</h2><p>在4.x版本中，初始化依然是通过”函数”：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">oid __init trap_init(void)</span><br><span class="line">&#123;</span><br><span class="line">	int i;</span><br><span class="line"></span><br><span class="line">	set_intr_gate(X86_TRAP_DE, divide_error);</span><br><span class="line">	set_intr_gate_ist(X86_TRAP_NMI, &amp;nmi, NMI_STACK);</span><br><span class="line">	/* int4 can be called from all */</span><br><span class="line">	set_system_intr_gate(X86_TRAP_OF, &amp;overflow);</span><br><span class="line">	set_intr_gate(X86_TRAP_BR, bounds);</span><br><span class="line">	set_intr_gate(X86_TRAP_UD, invalid_op);</span><br><span class="line">	set_intr_gate(X86_TRAP_NM, device_not_available);</span><br><span class="line">#ifdef CONFIG_X86_32</span><br><span class="line">	set_task_gate(X86_TRAP_DF, GDT_ENTRY_DOUBLEFAULT_TSS);</span><br><span class="line">#else</span><br><span class="line">	set_intr_gate_ist(X86_TRAP_DF, &amp;double_fault, DOUBLEFAULT_STACK);</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>set_intr_gate负责设置interrupt gate：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">set_intr_gate(n, addr)</span><br><span class="line"> |- set_intr_gate_notrace(n, addr);</span><br><span class="line">    |- _set_gate(n, GATE_INTERRUPT, (<span class="keyword">void</span> *)addr, <span class="number">0</span>, <span class="number">0</span>, __KERNEL_CS);</span><br><span class="line">       |- pack_gate(&amp;s, type, (<span class="keyword">unsigned</span> <span class="keyword">long</span>)addr, dpl, ist, seg);</span><br><span class="line">       |- write_idt_entry(idt_table, gate, &amp;s);</span><br><span class="line">       |- write_trace_idt_entry(gate, &amp;s); <span class="comment">// trace</span></span><br><span class="line">  |- _trace_set_gate  <span class="comment">// linux trace</span></span><br><span class="line">  </span><br><span class="line"><span class="comment">// write</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> write_idt_entry(dt, entry, g)		native_write_idt_entry(dt, entry, g)</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">native_write_idt_entry</span><span class="params">(gate_desc *idt, <span class="keyword">int</span> entry, <span class="keyword">const</span> gate_desc *gate)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="built_in">memcpy</span>(&amp;idt[entry], gate, <span class="keyword">sizeof</span>(*gate));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到set_intr_gate等一些列操作，最终是往内存的一个位置(idt_table)写入对应的gate信息。</p>
+<p>idt_table在head_32.S中被定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">idt_descr:</span><br><span class="line">	.word IDT_ENTRIES*8-1		# idt contains 256 entries</span><br><span class="line">	.long idt_table</span><br></pre></td></tr></table></figure>
+<p>对于64bit的定义在arch/x86/kernel/cpu/common.c中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#ifdef CONFIG_X86_64</span><br><span class="line">struct desc_ptr idt_descr __ro_after_init = &#123;</span><br><span class="line">	.size = NR_VECTORS * 16 - 1,</span><br><span class="line">	.address = (unsigned long) idt_table,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>随后会被lidt命令把地址写入idtr中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * The load_current_idt() must be called with interrupts disabled</span><br><span class="line"> * to avoid races. That way the IDT will always be set back to the expected</span><br><span class="line"> * descriptor. It&apos;s also called when a CPU is being initialized, and</span><br><span class="line"> * that doesn&apos;t need to disable interrupts, as nothing should be</span><br><span class="line"> * bothering the CPU then.</span><br><span class="line"> */</span><br><span class="line">static inline void load_current_idt(void)</span><br><span class="line">&#123;</span><br><span class="line">	if (is_debug_idt_enabled())</span><br><span class="line">		load_debug_idt();</span><br><span class="line">	else if (is_trace_idt_enabled())</span><br><span class="line">		load_trace_idt();</span><br><span class="line">	else</span><br><span class="line">		load_idt((const struct desc_ptr *)&amp;idt_descr);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而lidt的会读取desc_ptr struct的size作为limit，address作为idt的base：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">IF OperandSize = 16</span><br><span class="line">    THEN</span><br><span class="line">        IDTR(Limit) ← SRC[0:15];</span><br><span class="line">        IDTR(Base) ← SRC[16:47] AND 00FFFFFFH;</span><br><span class="line">    ELSE IF 32-bit Operand Size</span><br><span class="line">        THEN</span><br><span class="line">            IDTR(Limit) ← SRC[0:15];</span><br><span class="line">            IDTR(Base) ← SRC[16:47];</span><br><span class="line">        FI;</span><br><span class="line">    ELSE IF 64-bit Operand Size (* In 64-Bit Mode *)</span><br><span class="line">        THEN</span><br><span class="line">            IDTR(Limit) ← SRC[0:15];</span><br><span class="line">            IDTR(Base) ← SRC[16:79];</span><br><span class="line">        FI;</span><br><span class="line">FI;</span><br></pre></td></tr></table></figure>
+<h2 id="9-2-kernel-version-5-4"><a href="#9-2-kernel-version-5-4" class="headerlink" title="9.2. kernel version 5.4"></a>9.2. kernel version 5.4</h2><p>5.4 kernel中初始化有改变，set_intr_gate没有了，或者说设置default idt的值不通过set_intr_gate。不过idt_table之类的还是在的，依旧做为idt的内存存储：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * The default IDT entries which are set up in trap_init() before</span><br><span class="line"> * cpu_init() is invoked. Interrupt stacks cannot be used at that point and</span><br><span class="line"> * the traps which use them are reinitialized with IST after cpu_init() has</span><br><span class="line"> * set up TSS.</span><br><span class="line"> */</span><br><span class="line">static const __initconst struct idt_data def_idts[] = &#123;</span><br><span class="line">	INTG(X86_TRAP_DE,		divide_error),</span><br><span class="line">	INTG(X86_TRAP_NMI,		nmi),</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">#ifdef CONFIG_X86_32</span><br><span class="line">	TSKG(X86_TRAP_DF,		GDT_ENTRY_DOUBLEFAULT_TSS),</span><br><span class="line">#else</span><br><span class="line">	INTG(X86_TRAP_DF,		double_fault),</span><br><span class="line">#endif</span><br><span class="line">	INTG(X86_TRAP_DB,		debug),</span><br><span class="line"></span><br><span class="line">	SYSG(X86_TRAP_OF,		overflow),</span><br><span class="line">#if defined(CONFIG_IA32_EMULATION)</span><br><span class="line">	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_compat),</span><br><span class="line">#elif defined(CONFIG_X86_32)</span><br><span class="line">	SYSG(IA32_SYSCALL_VECTOR,	entry_INT80_32),</span><br><span class="line">#endif</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到，set_intr_gate变成了INTG的宏：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#define G(_vector, _addr, _ist, _type, _dpl, _segment)	\</span><br><span class="line">	&#123;						\</span><br><span class="line">		.vector		= _vector,		\</span><br><span class="line">		.bits.ist	= _ist,			\</span><br><span class="line">		.bits.type	= _type,		\</span><br><span class="line">		.bits.dpl	= _dpl,			\</span><br><span class="line">		.bits.p		= 1,			\</span><br><span class="line">		.addr		= _addr,		\</span><br><span class="line">		.segment	= _segment,		\</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">/* Interrupt gate */</span><br><span class="line">#define INTG(_vector, _addr)				\</span><br><span class="line">	G(_vector, _addr, DEFAULT_STACK, GATE_INTERRUPT, DPL0, __KERNEL_CS)</span><br></pre></td></tr></table></figure>
+<p>这里的idt_data定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct idt_data &#123;</span><br><span class="line">	unsigned int	vector;</span><br><span class="line">	unsigned int	segment;</span><br><span class="line">	struct idt_bits	bits;</span><br><span class="line">	const void	*addr;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>而def_idts的值会在函数idt_setup_from_table中写入：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">static void</span><br><span class="line">idt_setup_from_table(gate_desc *idt, const struct idt_data *t, int size, bool sys)</span><br><span class="line">&#123;</span><br><span class="line">	gate_desc desc;</span><br><span class="line"></span><br><span class="line">	for (; size &gt; 0; t++, size--) &#123;</span><br><span class="line">		idt_init_desc(&amp;desc, t);</span><br><span class="line">		write_idt_entry(idt, t-&gt;vector, &amp;desc);</span><br><span class="line">		if (sys)</span><br><span class="line">			set_bit(t-&gt;vector, system_vectors);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该这么多是为了保证代码整洁，原来的32和64bit定义分开，这里统一到了一起。</p>
+<h2 id="9-3-ignore-irq-handler"><a href="#9-3-ignore-irq-handler" class="headerlink" title="9.3. ignore irq handler"></a>9.3. ignore irq handler</h2><p>在irq handler初始化之前，所有的对应的idt entry都会被设置成 head_32.S中的early_ignore_irq(老版本是ignore_int)，代码基本一致：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">/* This is the default interrupt &quot;handler&quot; :-) */</span><br><span class="line">ENTRY(early_ignore_irq)</span><br><span class="line">	cld</span><br><span class="line">#ifdef CONFIG_PRINTK</span><br><span class="line">	pushl %eax</span><br><span class="line">	pushl %ecx</span><br><span class="line">	pushl %edx</span><br><span class="line">	pushl %es</span><br><span class="line">	pushl %ds</span><br><span class="line">	movl $(__KERNEL_DS),%eax</span><br><span class="line">	movl %eax,%ds</span><br><span class="line">	movl %eax,%es</span><br><span class="line">	cmpl $2,early_recursion_flag</span><br><span class="line">	je hlt_loop</span><br><span class="line">	incl early_recursion_flag</span><br><span class="line">	pushl 16(%esp)</span><br><span class="line">	pushl 24(%esp)</span><br><span class="line">	pushl 32(%esp)</span><br><span class="line">	pushl 40(%esp)</span><br><span class="line">	pushl $int_msg</span><br><span class="line">	call printk</span><br><span class="line"></span><br><span class="line">	call dump_stack</span><br><span class="line"></span><br><span class="line">	addl $(5*4),%esp</span><br><span class="line">	popl %ds</span><br><span class="line">	popl %es</span><br><span class="line">	popl %edx</span><br><span class="line">	popl %ecx</span><br><span class="line">	popl %eax</span><br><span class="line">#endif</span><br><span class="line">	iret</span><br></pre></td></tr></table></figure>
+<h2 id="9-4-Typical-Exception-Handler-Process"><a href="#9-4-Typical-Exception-Handler-Process" class="headerlink" title="9.4 Typical Exception Handler Process"></a>9.4 Typical Exception Handler Process</h2><p>基本的exception处理流程包括如下几步：</p>
+<ul>
+<li>保存error code，jmp到通用的exception handler流程<ul>
+<li>legacy mode: error_code</li>
+<li>latest(5.4): common_exception</li>
+</ul>
+</li>
+<li>通用的exception handler流程会首先保存context</li>
+<li>调用对应的c代码的handler(地址保存在%edi中)</li>
+<li>调用ret_from_exception开始返回</li>
+<li>调用restore_all_kernel</li>
+<li>检查是否有中断</li>
+<li>恢复stack frame随后iret</li>
+</ul>
+<p>更加完整的流程描述如下：</p>
+<ol>
+<li>Saves the registers that might be used by the high-level C function on the stack.</li>
+<li>Issues a cld instruction to clear the direction flag DF of eflags, thus making sure<br>that autoincreases on the edi and esi registers will be used with string<br>instructions.*</li>
+<li>Copies the hardware error code saved in the stack at location esp+36 in edx.<br>Stores the value –1 in the same stack location. As we’ll see in the section “Reexecution of System Calls” in Chapter 11, this value is used to separate 0x80 exceptions from other exceptions.</li>
+<li>Loads edi with the address of the high-level do_handler_name( ) C function<br>saved in the stack at location esp+32; writes the contents of es in that stack<br>location.</li>
+<li>Loads in the eax register the current top location of the Kernel Mode stack. This<br>address identifies the memory cell containing the last register value saved in<br>step 1.</li>
+<li>Loads the user data Segment Selector into the ds and es registers.</li>
+<li>Invokes the high-level C function whose address is now stored in edi.</li>
+</ol>
+<p>以下，举处除零的handler为例。</p>
+<h3 id="9-4-1-Legacy-do-divide-error实现"><a href="#9-4-1-Legacy-do-divide-error实现" class="headerlink" title="9.4.1. Legacy do_divide_error实现"></a>9.4.1. Legacy do_divide_error实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ENTRY(divide_error)</span><br><span class="line">	RING0_INT_FRAME</span><br><span class="line">	ASM_CLAC</span><br><span class="line">	pushl_cfi $0			# no error code</span><br><span class="line">	pushl_cfi $do_divide_error</span><br><span class="line">	jmp error_code</span><br><span class="line">	CFI_ENDPROC</span><br><span class="line">END(divide_error)</span><br></pre></td></tr></table></figure>
+<p>error_code是共享的处理流程，其中会调用到do_divide_error函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">error_code:</span><br><span class="line">    ... # push registers</span><br><span class="line"></span><br><span class="line">	cld</span><br><span class="line">	</span><br><span class="line">	... # build up do_divide_error function stack</span><br><span class="line">	 </span><br><span class="line">	call *%edi # call do_divide_error function</span><br><span class="line">	jmp ret_from_exception</span><br><span class="line">	CFI_ENDPROC</span><br><span class="line">END(page_fault)</span><br></pre></td></tr></table></figure>
+<p>do_divide_error是个c程序，定义在traps.c中的宏DO_ERROR_INFO，最终会调用do_trap来：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DO_ERROR_INFO(trapnr, signr, str, name, sicode, siaddr)		\</span></span><br><span class="line">dotraplinkage <span class="keyword">void</span> do_#<span class="meta">#name(struct pt_regs *regs, long error_code)	\</span></span><br><span class="line">&#123;									\</span><br><span class="line">	...</span><br><span class="line">	conditional_sti(regs);						\</span><br><span class="line">	do_trap(trapnr, signr, str, regs, error_code, &amp;info);		\</span><br><span class="line">	exception_exit(prev_state);					\</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// do_trap</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __kprobes</span><br><span class="line">do_trap(<span class="keyword">int</span> trapnr, <span class="keyword">int</span> signr, <span class="keyword">char</span> *str, struct pt_regs *regs,</span><br><span class="line">	<span class="keyword">long</span> error_code, <span class="keyword">siginfo_t</span> *info)</span><br><span class="line">&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">task_struct</span> *<span class="title">tsk</span> = <span class="title">current</span>;</span></span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (info)</span><br><span class="line">		force_sig_info(signr, info, tsk);</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">		force_sig(signr, tsk);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后一步是想当前程序发送一个SIGFPE signal。ret_from_exception和5.4版本中功能类似，后面一起讲。</p>
+<h3 id="9-4-2-Linux-5-4-kernel实现："><a href="#9-4-2-Linux-5-4-kernel实现：" class="headerlink" title="9.4.2. Linux 5.4 kernel实现："></a>9.4.2. Linux 5.4 kernel实现：</h3><h4 id="9-4-2-1-32bit-divide-error"><a href="#9-4-2-1-32bit-divide-error" class="headerlink" title="9.4.2.1. 32bit divide_error"></a>9.4.2.1. 32bit divide_error</h4><p>代码在entry_32.S中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ENTRY(divide_error)</span><br><span class="line">	ASM_CLAC</span><br><span class="line">	pushl	$0				# 这里保存error code，0代表没有</span><br><span class="line">	pushl	$do_divide_error  # 这里保存目标c程序地址</span><br><span class="line">	jmp	common_exception</span><br><span class="line">END(divide_error)</span><br></pre></td></tr></table></figure>
+<p>common_exception是通用的exception处理流程（除了double fault）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">common_exception:</span><br><span class="line">	/* the function address is in %gs&apos;s slot on the stack */</span><br><span class="line">	SAVE_ALL switch_stacks=1 skip_gs=1</span><br><span class="line">	ENCODE_FRAME_POINTER</span><br><span class="line">	UNWIND_ESPFIX_STACK</span><br><span class="line"></span><br><span class="line">	/* fixup %gs */</span><br><span class="line">	GS_TO_REG %ecx</span><br><span class="line">	movl	PT_GS(%esp), %edi		# get the function address</span><br><span class="line">	REG_TO_PTGS %ecx</span><br><span class="line">	SET_KERNEL_GS %ecx</span><br><span class="line"></span><br><span class="line">	/* fixup orig %eax */</span><br><span class="line">	movl	PT_ORIG_EAX(%esp), %edx		# get the error code</span><br><span class="line">	movl	$-1, PT_ORIG_EAX(%esp)		# no syscall to restart</span><br><span class="line"></span><br><span class="line">	TRACE_IRQS_OFF</span><br><span class="line">	movl	%esp, %eax			# pt_regs pointer</span><br><span class="line">	CALL_NOSPEC %edi          # 跳转到对应的c历程</span><br><span class="line">	jmp	ret_from_exception</span><br><span class="line">END(common_exception)</span><br></pre></td></tr></table></figure>
+<p>除去一堆保存环境和测试的，这里要关注的就是跳转到c handler的代码。</p>
+<h4 id="9-4-2-2-64bit-divide-error实现"><a href="#9-4-2-2-64bit-divide-error实现" class="headerlink" title="9.4.2.2. 64bit divide_error实现"></a>9.4.2.2. 64bit divide_error实现</h4><p>代码在entry_64.S中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">idtentry divide_error			do_divide_error			has_error_code=0</span><br><span class="line"></span><br><span class="line">// idtentry - Generate an IDT entry stub</span><br></pre></td></tr></table></figure>
+<p>idtentry: generates an IDT stub that sets up a usable kernel context, creates struct pt_regs, and calls @do_sym. </p>
+<h4 id="9-4-2-2-c-handler"><a href="#9-4-2-2-c-handler" class="headerlink" title="9.4.2.2 c handler"></a>9.4.2.2 c handler</h4><p>do_divide_error实现在arch\x86\kernel\traps.c</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> IP ((void __user *)uprobe_get_trap_addr(regs))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> DO_ERROR(trapnr, signr, sicode, addr, str, name)		   \</span></span><br><span class="line">dotraplinkage <span class="keyword">void</span> do_#<span class="meta">#name(struct pt_regs *regs, long error_code)	   \</span></span><br><span class="line">&#123;									   \</span><br><span class="line">	do_error_trap(regs, error_code, str, trapnr, signr, sicode, addr); \</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">DO_ERROR(X86_TRAP_DE,     SIGFPE,  FPE_INTDIV,   IP, <span class="string">"divide error"</span>,        divide_error)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">do_error_trap</span><span class="params">(struct pt_regs *regs, <span class="keyword">long</span> error_code, <span class="keyword">char</span> *str,</span></span></span><br><span class="line"><span class="function"><span class="params">	<span class="keyword">unsigned</span> <span class="keyword">long</span> trapnr, <span class="keyword">int</span> signr, <span class="keyword">int</span> sicode, <span class="keyword">void</span> __user *addr)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	RCU_LOCKDEP_WARN(!rcu_is_watching(), <span class="string">"entry code didn't wake RCU"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * WARN*()s end up here; fix them up before we call the</span></span><br><span class="line"><span class="comment">	 * notifier chain.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">if</span> (!user_mode(regs) &amp;&amp; fixup_bug(regs, trapnr))</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (notify_die(DIE_TRAP, str, regs, error_code, trapnr, signr) !=</span><br><span class="line">			NOTIFY_STOP) &#123;</span><br><span class="line">		cond_local_irq_enable(regs);</span><br><span class="line">		do_trap(trapnr, signr, str, regs, error_code, sicode, addr);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>类似的，这里也会调用的通用do_trap实现中去。</p>
+<h2 id="9-5-返回"><a href="#9-5-返回" class="headerlink" title="9.5. 返回"></a>9.5. 返回</h2><p>完成调用以后，ret_from_exception负责返回到原来进程中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ret_from_exception</span><br><span class="line">  - restore_all_kernel</span><br><span class="line">    - .Lno_preempt</span><br><span class="line">      - .Lirq_return</span><br><span class="line">        - IRET_FRAME -&gt; 回复堆栈</span><br><span class="line">        - INTERRUPT_RETURN -&gt; iret 或者 jmp native_iret</span><br></pre></td></tr></table></figure>
+<h1 id="10-中断-Interrupt"><a href="#10-中断-Interrupt" class="headerlink" title="10. 中断(Interrupt)"></a>10. 中断(Interrupt)</h1><ul>
+<li>异常最终的操作基本都是发signal给当前的进程，这是因为异常的发生往往是in time的。</li>
+<li>但是对于中断，中断的trigger往往是异步的，触发时候目标进程可能在sleep状态，也就是说当前进程不是中断的目标进程。</li>
+</ul>
+<p>中断细节可以分成如下几类：</p>
+<ul>
+<li>I/O interrupts</li>
+<li>Timer interrupts<ul>
+<li>local APIC timer or an external timer</li>
+</ul>
+</li>
+<li>Interprocessor interrupts</li>
+</ul>
+<h2 id="10-1-I-O-interrupts"><a href="#10-1-I-O-interrupts" class="headerlink" title="10.1. I/O interrupts"></a>10.1. I/O interrupts</h2><p>多台设备可能绑在同一个I/O interrupt上，使用同一条IRQ line。此时，需要一种分享的方式，一般有两种方式：</p>
+<ul>
+<li>IRQ sharing: 多个设备使用同一个interrupt service routines (ISRs)，这个routine需要去判断到底哪一个设备发送了中断。</li>
+<li>IRQ dynamic allocation: 一次只让一个设备使用，只有激活状态的设备可以尝试独占IRQ line。</li>
+</ul>
+<p>另一方面，对于中断处理程序，因为其会屏蔽中断，并且可能被switch出去，所以linux会把中断处理后可能的操作分成三类：</p>
+<ul>
+<li>Critical</li>
+<li>Noncritical</li>
+<li>Noncritical deferrable</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/21/wild-pig-chapter3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/11/21/wild-pig-chapter3/" class="post-title-link" itemprop="url">野猪书第三章读书笔记</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-11-21 14:10:59" itemprop="dateCreated datePublished" datetime="2019-11-21T14:10:59+08:00">2019-11-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-05 23:04:13" itemprop="dateModified" datetime="2019-12-05T23:04:13+08:00">2019-12-05</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-overview"><a href="#1-overview" class="headerlink" title="1. overview"></a>1. overview</h1><p>数据库分类</p>
+<ul>
+<li>事务处理型</li>
+<li>数据分析型</li>
+</ul>
+<p>存储索引家族：</p>
+<ul>
+<li>日志结构的存储引擎</li>
+<li>面向页的存储引擎，比如b-tree</li>
+</ul>
+<h1 id="2-哈希表索引"><a href="#2-哈希表索引" class="headerlink" title="2. 哈希表索引"></a>2. 哈希表索引</h1><p>核心：将key hash到对应的文件位置</p>
+<ul>
+<li>使用日志方式，不修改已有记录，在末尾增加<ul>
+<li>如果能够保持key在内存中，那么写入速度会很快</li>
+</ul>
+</li>
+<li>将日志分段，到一定大小，生成新的段<ul>
+<li>在合适时机进行段合并，只保留最新的结果</li>
+<li>使用后台线程，在完成合并之前使用老的index</li>
+<li>合并之后切换到新的index，删除老的index</li>
+</ul>
+</li>
+<li>最终，每一个段都会有自己的索引（注意，可能有多个段）<ul>
+<li>搜索需要从最新的段开始往前找索引表</li>
+</ul>
+</li>
+</ul>
+<p>在实现中还需要考虑：</p>
+<ul>
+<li>文件格式：二进制 &gt; CSV</li>
+<li>删除记录：可以通过标记，在合并时候处理被删除的key</li>
+<li>崩溃回复：如果重启引起内存中的key map丢失，可以<ul>
+<li>从头开始扫描文件，重建key map</li>
+<li>或者在平时就定时将key map映射到磁盘之上</li>
+</ul>
+</li>
+<li>部分写入的记录：写日志中也有可能崩溃，加入校验值来发现损坏情况。</li>
+<li>并发控制：因为段是需要严格顺序写入的，因此<ul>
+<li>写必须是单线程</li>
+<li>读可以多线程</li>
+</ul>
+</li>
+</ul>
+<p>为什么之追加不直接修改文件：</p>
+<ul>
+<li>顺序写性能会好很多，特别对于HDD。但是对于SSD或者nvme磁盘如何呢？</li>
+<li>因为追加是只读的，因此兵法和崩溃恢复都简单很多。</li>
+<li>合并旧段可以减轻文件碎片化问题</li>
+</ul>
+<p>哈希表索引局限性：</p>
+<ul>
+<li>索引哈希表必须全部放入内存，如果spill到磁盘上，性能会收到影响；另外，哈希变满时候，哈希冲突会影响性能。</li>
+<li>区间查询效率不高：就是说相邻的key的value值分布基本不会是相邻的，因此扫描一个range的keys，需要逐个查找其中的每一个key。<ul>
+<li>换句话说，你没办法知道range中哪些key是存在的，只能一个一个测试。</li>
+</ul>
+</li>
+</ul>
+<h1 id="3-SSTable索引"><a href="#3-SSTable索引" class="headerlink" title="3. SSTable索引"></a>3. SSTable索引</h1><p>哈希表索引中保存在文件中的key-value值对是不排序的，出现的顺序基本是按照写入的顺序的来的，无论是原始文件还是合并后的文件。</p>
+<p>如果我们要求磁盘上的文件值对，都是按照key的顺序来保存。那么会有如下好处：</p>
+<ul>
+<li>合并两个segment file会变得高效</li>
+<li>内存中的索引不需要保存所有key的索引信息，只需要保存几个作为标点的key的索引，其他key可通过区间扫描来寻找。在区间不大时候，需要扫描的range是有限的，性能方面也是非常快的。</li>
+<li>文件可以进行压缩，我们只需要记录segment的start和end的key</li>
+</ul>
+<p>如何实现：</p>
+<ul>
+<li>在内存中引入排序结构，比如红黑树或者AVL-tree，在抵达threshold之后写入磁盘</li>
+<li>查找的时候按照先内存后磁盘的方法进行搜寻</li>
+<li>定时后台合并文件</li>
+<li>为了支持崩溃恢复，可以为内存中的数据额外做一份普通的日志来作为恢复使用</li>
+</ul>
+<h2 id="3-1-LSM-Tree"><a href="#3-1-LSM-Tree" class="headerlink" title="3.1. LSM-Tree"></a>3.1. LSM-Tree</h2><p>所有类似这种排序后的segment file合并的结构都可以称之LSM-Tree(Log-structured merge-tree)。</p>
+<p>包括LevelDB,RocksDB和Cassandra，Hbase都有LSM-tree的影子。另外ES以来的Lucence索引引擎，也用了类似的逻辑：倒排索引按照key的顺序保存在文件中，通过额外的索引的索引来快速搜索这些倒排索引。</p>
+<p>注意SSTable是索引，LSM-Tree是真正存储数据的文件结构。</p>
+<h2 id="3-2-优化"><a href="#3-2-优化" class="headerlink" title="3.2. 优化"></a>3.2. 优化</h2><p>最坏情况下，如果某个key不存在或者key只存在最老的segment中时候，需要触发一次全segment文件的扫描操作。对于key不存在的情况，引入blooming filter，保证如果filter告诉你不存在，保证key确实不存在。</p>
+<p>对于后者，SSTable的压缩和合并逻辑会有一些影响，有两种合并逻辑：</p>
+<ul>
+<li>大吞小</li>
+<li>分层合并：将旧的数据分到单独的层级，然后进行合并</li>
+</ul>
+<h1 id="4-B-Tree"><a href="#4-B-Tree" class="headerlink" title="4. B-Tree"></a>4. B-Tree</h1><p>B-Tree将数据和索引分成固定大小的数据块，一般为4KB（配合x86的默认页大小4KB），然后将数据块们组织成树形结构。注意这里，B-Tree保存的是索引信息，每一个叶子节点保存了某个值的具体位置信息。</p>
+<p>参考：</p>
+<ul>
+<li><a href="https://zh.wikipedia.org/wiki/B%E6%A0%91" target="_blank" rel="noopener">B-Tree</a></li>
+<li><a href="http://blog.codinglabs.org/articles/theory-of-mysql-index.html" target="_blank" rel="noopener">MySQL索引背后的数据结构及算法原理</a></li>
+</ul>
+<p>简单来说，一个M维度的B-Tree节点可以如此描述：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct Node &#123;</span><br><span class="line">    int numberKeys;</span><br><span class="line">    string keys[M - 1];</span><br><span class="line">    object values[M - 1];</span><br><span class="line">    struct Node children[M];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>另外有一些约束来保证B-Tree的搜索性能，对于一棵order为m的树（最多有m个子节点）：</p>
+<ul>
+<li>任何节点如果有k个key，那么就有k+1个ref</li>
+<li>除了叶子节点，每一层至少是半满的，也就是至少有[m/2]个key和key+1的ref；最多有有m-1个key和m个ref</li>
+<li>每个internal 节点至少有2个子节点（2个ref）</li>
+</ul>
+<p>在这种情况下，整棵树的高度可以限制在(N为key的个数）：</p>
+<script type="math/tex; mode=display">
+H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保存key对应的值，又保存了ref的信息。</p>
+<h2 id="4-1-B-Tree容错"><a href="#4-1-B-Tree容错" class="headerlink" title="4.1 B-Tree容错"></a>4.1 B-Tree容错</h2><p>B-Tree一般使用预写日志(write-ahead, WAL)，先写日志，再写Tree。</p>
+<p>多线程情况下， B-Tree不像LSM-Tree那么容易。</p>
+<h2 id="4-2-B-Tree优化"><a href="#4-2-B-Tree优化" class="headerlink" title="4.2 B-Tree优化"></a>4.2 B-Tree优化</h2><ul>
+<li>写时复制</li>
+<li>B+ Tree，也就是在internal节点不保存具体节点的值，只保存ref或者其他索引信息；在叶子节点才保存具体的值。这样做的另外一个好处是可以把非叶子节点都加载到内存中。</li>
+<li>slibing节点直接可以增加额外的ref来快速遍历</li>
+<li>分形树（FTI，Fractal Tree Indexes）<ul>
+<li>为叶子节点增加存储数据的buffer，组织成一棵树</li>
+<li>为节点增加Message buffer，用于缓冲读写请求</li>
+</ul>
+</li>
+</ul>
+<h2 id="5-LSM-Tree和B-Tree比较"><a href="#5-LSM-Tree和B-Tree比较" class="headerlink" title="5. LSM-Tree和B-Tree比较"></a>5. LSM-Tree和B-Tree比较</h2><p>写放大：合并数据时候引入的额外写入。</p>
+<p>LSM-Tree优势：</p>
+<ul>
+<li>有时候具有较低的写放大</li>
+<li>顺序写人更加好的cache效率</li>
+<li>更好的压缩和更少的碎片</li>
+</ul>
+<p>LSM-Tree缺点：</p>
+<ul>
+<li>后台合并操作影响前台读写性能，相对而言，B-Tree的性能更加稳定</li>
+<li>高吞吐量时候，如果后台合并速度跟不上，磁盘空间最终会被吃完。</li>
+<li>B-Tree更好的支持锁机制。在许多关系数据库中，事务隔离是通过key范围上的锁来实现的。</li>
+</ul>
+<h2 id="6-其他"><a href="#6-其他" class="headerlink" title="6.其他"></a>6.其他</h2><h3 id="6-1-二级索引"><a href="#6-1-二级索引" class="headerlink" title="6.1. 二级索引"></a>6.1. 二级索引</h3><p>除了主索引外的额外索引，但是会有key重复的问题。一般通过拼凑其他信息来使得key唯一。</p>
+<h3 id="6-2-堆文件"><a href="#6-2-堆文件" class="headerlink" title="6.2. 堆文件"></a>6.2. 堆文件</h3><p>一般索引中不保存具体的值，只是保存一个ref信息或者位置信息，具体的内容保存在堆文件中。</p>
+<p>在更新时候，如果新值不大于旧值，那么直接覆盖就可以了；否则需要重新分配空间，并且所有指向这个值的ref信息都需要更新或者留下一个指向新位置的间接跳转信息。</p>
+<h3 id="6-3-聚集索引"><a href="#6-3-聚集索引" class="headerlink" title="6.3. 聚集索引"></a>6.3. 聚集索引</h3><p>索引中直接保存具体的值。另外有保存部分值的覆盖索引或者包含列索引。（类似cache）</p>
+<p>无论那种都可以提高读取性能，代价是复杂的插入和事务同步问题。</p>
+<h3 id="6-4-多列索引"><a href="#6-4-多列索引" class="headerlink" title="6.4. 多列索引"></a>6.4. 多列索引</h3><p>对于多列进行合并索引。</p>
+<ul>
+<li>级联索引</li>
+</ul>
+<p>把多个列合并拼接起来作为一个key索引。对于A+B拼接的，可以对于A+B或者A进行快速索引，但是没有办法对B单独进行快速索引。</p>
+<ul>
+<li>多维索引</li>
+</ul>
+<p>对于多个列进行真正的索引。传统的B-Tree和LSM-Tree都没有办法高效的应对这种查询。</p>
+<h4 id="6-4-1-R-Tree"><a href="#6-4-1-R-Tree" class="headerlink" title="6.4.1. R-Tree"></a>6.4.1. R-Tree</h4><p>R树是用来做空间数据存储的树状数据结构。例如给地理位置，矩形和多边形这类多维数据创建索引。</p>
+<p>类似于B-Tree，R-Tree将空间划分成多个子空间（类似于一个range），然后继续划分直到最终值，效果如下：</p>
+<p><img src="rtree.png" alt="image"></p>
+<p>与此相关的还有其他的名为空间索引的机制：</p>
+<p>参考文章</p>
+<ul>
+<li><a href="https://cloud.tencent.com/developer/news/199266" target="_blank" rel="noopener">https://cloud.tencent.com/developer/news/199266</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/38597148" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/38597148</a></li>
+</ul>
+<p>空间索引列表：</p>
+<ul>
+<li>GeoHash</li>
+<li>kd-tree</li>
+<li>Grid index</li>
+<li>四叉树/八叉树</li>
+<li>Space filling curve：通过一条线来描述空间上的所有位置，二维值可以转化成单个值</li>
+</ul>
+<p><img src="spaceFill.png" alt="image"></p>
+<ul>
+<li>LSH（Locality Sensitive Hashing</li>
+</ul>
+<h3 id="6-5-全文搜索"><a href="#6-5-全文搜索" class="headerlink" title="6.5. 全文搜索"></a>6.5. 全文搜索</h3><p>全文搜索不同于之前的索引有明显的范围。全文搜索往往是模糊的。</p>
+<p>lucene通过给key构建前缀树来提供key的模糊搜索。</p>
+<h2 id="7-内存数据库"><a href="#7-内存数据库" class="headerlink" title="7. 内存数据库"></a>7. 内存数据库</h2><ul>
+<li>随机访问 -&gt; 可以使用磁盘没有办法高效实用的数据结构</li>
+<li>易失性 -&gt; NVM</li>
+</ul>
+<p>标准产品：</p>
+<ul>
+<li>redis</li>
+<li>RAMCloud</li>
+</ul>
+<h2 id="8-事务处理（OLTP，online-transaction-processing"><a href="#8-事务处理（OLTP，online-transaction-processing" class="headerlink" title="8. 事务处理（OLTP，online transaction processing)"></a>8. 事务处理（OLTP，online transaction processing)</h2><p>OLTP类似于传统的SQL引擎，查询没有固定的format，更多是ad-hoc(online)的查询。OLAP（online analytic processing），类似于数据仓库。OLTP的索引更多使用上述提到的索引；OLAP需要新设计的索引。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Transaction processing systems (OLTP)</th>
+<th>Analytic systems (OLAP)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Main read pattern |Small number of records per query, fetched by key |Aggregate over large number of records<br>Main write pattern |Random-access, low-latency writes from user input |Bulk import (ETL) or event stream<br>Primarily used by |End user/customer, via web application |Internal analyst, for decision support<br>What data represents |Latest state of data (current point in time) |History of events that happened over time<br>Dataset size |Gigabytes to terabytes |Terabytes to petabytes</p>
+<p>典型的数据仓库</p>
+<ul>
+<li>Terdata</li>
+<li>Vertica</li>
+<li>SAP HAHA</li>
+<li>Hadoop系列</li>
+</ul>
+<h2 id="9-列式存储"><a href="#9-列式存储" class="headerlink" title="9. 列式存储"></a>9. 列式存储</h2><ul>
+<li>按照列的方式来存储数据，而不是传统的整行的顺序</li>
+<li>只需要关注几列 -&gt; 更少的数据读取和更快的读取速度</li>
+<li>方便压缩<ul>
+<li>位图进一步的游程(Run-Length)编码</li>
+</ul>
+</li>
+<li>cache &amp; memory friend，并且可以使用SIMD指令</li>
+<li>列式存储的排序和索引</li>
+</ul>
+<p>HBase列簇中的数据式按照行来存储的。</p>
+<h2 id="10-Data-Cubes-and-Materialized-Views-物化视图"><a href="#10-Data-Cubes-and-Materialized-Views-物化视图" class="headerlink" title="10.  Data Cubes and Materialized Views(物化视图)"></a>10.  Data Cubes and Materialized Views(物化视图)</h2><p>物化会提前计算出一些结果然后保存下来。Data Cube就是按照各种不同维度聚合形成的数据块。</p>
+<ul>
+<li>优势是预先计算能获得好的性能提升。</li>
+<li>劣势缺乏灵活性和额外的存储空间。</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/18/RSIC-V-RV32I-Instruction-Set/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/11/18/RSIC-V-RV32I-Instruction-Set/" class="post-title-link" itemprop="url">RSIC-V RV32I Instruction Set</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-11-18 22:28:50" itemprop="dateCreated datePublished" datetime="2019-11-18T22:28:50+08:00">2019-11-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-16 23:09:45" itemprop="dateModified" datetime="2019-12-16T23:09:45+08:00">2019-12-16</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-Instruction-Length"><a href="#1-Instruction-Length" class="headerlink" title="1. Instruction Length"></a>1. Instruction Length</h1><p>RISC-V指令是定长的32bit，但是拓展可以支持变长。变长一定是16bit的整数倍。</p>
+<p>encoding convension要求所有32bit指令长度的命令最低两位一定是11. 注意RISC-V是小端的指令集。对于&gt;32bit长度的指令格式，同样要求满足这个要求，因此对于16bit指令长度，要求最低两位一定不是11。</p>
+<p>当然对于non-standard指令格式，RISC-V可以是大端的。 </p>
+<h1 id="2-RV32I"><a href="#2-RV32I" class="headerlink" title="2. RV32I"></a>2. RV32I</h1><p>RV32I是最基础的指令集，也是任何RISC-V实现必须实现的指令集。RV32I包括了47条独特指令，另外，实现可以选择使用总是trap的系统（SYSTEM）硬件指令代替 8 条 SCALL / SBREAK / RD* 指令，可以讲指令集减少到40条；如果还能够实现FENCE和FENC.I，那么可以将指令总数减少到38条。RV32I 能够模拟几乎所有的 ISA 扩展（除了 A 扩展，它需要额外的硬件来支持原子性（atomicity））。</p>
+<blockquote>
+<p>RV32I was designed to be sufficient to form a compiler target and to support modern operating system environments. The ISA was also designed to reduce the hardware required in a minimal implementation. RV32I contains 47 unique instructions, though a simple implementation might cover the eight SCALL/SBREAK/CSRR* instructions with a single SYSTEM hardware instruction that always traps and might be able to implement the FENCE and FENCE.I instructions as NOPs, reducing hardware instruction count to 38 total. RV32I can emulate almost any other ISA extension (except the A extension, which requires additional hardware support for atomicity).</p>
+</blockquote>
+<p>RV32I包括了32个32bit的通用寄存器(x0-x31)外加一个用户可见的pc寄存器。32个通用寄存器其中x0固定为全0，x1一般用于保存返回值。详细的register convension参考较早文章。</p>
+<h2 id="2-1-opcode-layout"><a href="#2-1-opcode-layout" class="headerlink" title="2.1. opcode layout"></a>2.1. opcode layout</h2><p>RISC-V设计几个理念：</p>
+<ul>
+<li>所有的layout格式尽量共享位置的意义的定义<ul>
+<li>比如所有的指令的r0，r1，rd位置都固定index</li>
+</ul>
+</li>
+<li>尽量减少指令额外的计算，比如预先进行shift，只使用符号扩展</li>
+</ul>
+<p>RV32I包括了4种基本格式(R/I/S/U)和两种变化格式(B/J)：</p>
+<p><img src="RV32I-Layout.png" alt=""></p>
+<p>可以看到寄存器的位置是固定的。</p>
+<h2 id="2-2-整数指令"><a href="#2-2-整数指令" class="headerlink" title="2.2. 整数指令"></a>2.2. 整数指令</h2><p>首先需要注意到，opcode的长度是8个bit，去掉固定为11的最低两位，能用的opcode长度是6bit，也就是说最多支持2^6=64条指令。但实际上，RV32I中的很多指令是公用opcode的，通过额外参数来区分具体的action。</p>
+<p>比如ADD和SUB就共享opcode。完整的列表如下：</p>
+<p><img src="RV32I-Instr-List.png" alt="image"></p>
+<ul>
+<li>LUI: load imm into register</li>
+<li>AUIPC: add imm to pc</li>
+<li>JAL: unconditional direct jump</li>
+<li>JALR: unconditional indirect jump</li>
+<li>BEQ: conditional branch when equal</li>
+<li>BNE: conditional branch when not equal</li>
+<li>BLT: conditional branch when r1 &lt; r2</li>
+<li>BGE: conditional branch when r1 &gt; r2</li>
+<li>BLTU: conditional branch when r1 &lt; r2 as unsinged</li>
+<li>BGEU: conditional branch when r1 &gt; r2 as unsinged</li>
+<li>LB: load 8bit value from memory into register</li>
+<li>LH: load 16bit value from memory into register</li>
+<li>LW: load 32bit value from memory into register</li>
+<li>LBU: load 8bit unsigned value from memory into register</li>
+<li>LHU: load 16bit unsigned value from memory into register</li>
+<li>SB: store 8bit value from register to memory</li>
+<li>SH: store 16bit value from register to memory</li>
+<li>SW: store 32bit value from register to memory</li>
+<li>ADDI: adds the sign-extended 12-bit immediate with r1 to rd</li>
+<li>SLTI: put 1 into register if r1 &lt; signed extend imm otherwise 0</li>
+<li>SLTIU: put 1 into register if r1 &lt; r2 extend imm as unsigned otherwise 0</li>
+<li>XORI: xor the sign-extended 12-bit immediate with r1 to rd</li>
+<li>ORI: or the sign-extended 12-bit immediate with r1 to rd</li>
+<li>ANDI: and the sign-extended 12-bit immediate with r1 to rd</li>
+<li>SLLI: logical left shift register value imm bits</li>
+<li>SRLI: logical right shift register value imm bits</li>
+<li>SRAI: arithmetic right shift register value imm bits<br>shift</li>
+<li>ADD: add</li>
+<li>SUB: sub</li>
+<li>SLL: logical left shift r1 value <strong>low 5 bits</strong> value of r2</li>
+<li>SLT: put 1 into register if r1 &lt; r2 otherwise 0</li>
+<li>SLTU: put 1 into register if r1 &lt; r2 as unsignedotherwise 0</li>
+<li>XOR: xor</li>
+<li>SRL: logical right shift r1 value <strong>low 5 bits</strong> value of r2</li>
+<li>SRA: arithmetic right shift r1 value <strong>low 5 bits</strong> value of r2</li>
+<li>OR: or</li>
+<li>AND: and</li>
+<li>FENCE: memory fence</li>
+<li>ECALL：Trap to System Call</li>
+<li>EBREAK: DEBUG mode break</li>
+</ul>
+<p>一些注解</p>
+<ul>
+<li><strong>RISC-V的FENCE可以玩组合:</strong></li>
+</ul>
+<blockquote>
+<p>Any combination of device input (I), device output (O), memory reads (R), and memory writes (W) may be ordered with respect to any combination of the same. </p>
+</blockquote>
+<ul>
+<li><strong>RISC-V是没有Overflow Flag:</strong></li>
+</ul>
+<p>下面引自官方文档：</p>
+<p>We did not include special instruction-set support for overflow checks on integer arithmetic operations in the base instruction set, as many overflow checks can be cheaply implemented using RISC-V branches. Overflow checking for unsigned addition requires only a single additional branch instruction after the addition: <code>add t0, t1, t2; bltu t0, t1, overflow</code>.</p>
+<p>For signed addition, if one operand’s sign is known, overflow checking requires only a single branch after the addition: <code>addi t0, t1, +imm; blt t0, t1, overflow</code>. This covers the common case of addition with an immediate operand.</p>
+<p>For general signed addition, three additional instructions after the addition are required, leveraging the observation that the sum should be less than one of the operands if and only if the other operand is negative.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">add t0, t1, t2</span><br><span class="line">slti t3, t2, 0</span><br><span class="line">slt t4, t0, t1</span><br><span class="line">bne t3, t4, overflow</span><br></pre></td></tr></table></figure>
+<p>In RV64I, checks of 32-bit signed additions can be optimized further by comparing the results of ADD and ADDW on the operands.</p>
+<p>简单来说，检查是否overflow没有flag给你用（为了简化电路设计，另外overflow用处不大），而是用指令+branch来进行判断，详细而言分成3中情况：</p>
+<ol>
+<li>unsigned相加，那么没有overflow意味着 rd &gt; r1 &amp;&amp; rd &gt; r2，当然对于imm版本只需要检测rd &gt; r1</li>
+<li>signed imm相加，如果imm符号知道，那么判断rd &gt; r1或者rd &lt; r1</li>
+<li>剩下的就需要好几条指令来判断了</li>
+</ol>
+<ul>
+<li><strong>NOP命令:</strong></li>
+</ul>
+<p>不存在的，可以用ADD r1, r1, r0来代替。拓展指令集可能加入单独的NOP指令。</p>
+<ul>
+<li><strong>状态寄存器:</strong></li>
+</ul>
+<p>不存在的+1。老版本的文档将CSR相关命令列到RV32I下面；当前文档(draft-20191114-0777770)单独拆到了一章：“Zicsr”, Control and Status Register<br>(CSR) Instructions, Version 2.0</p>
+<p>因此也不存在用于比较的EFLAGS，所有的条件跳转都是比较具体的两个寄存器或者寄存器和imm的值。</p>
+<p>说到底也是为了简化系统的设计。</p>
+<h1 id="3-RV64I"><a href="#3-RV64I" class="headerlink" title="3. RV64I"></a>3. RV64I</h1><p>和RV64I非常类似，差别在于：</p>
+<ul>
+<li>寄存器宽度变成了64bit</li>
+<li>扩展了64bit宽度的指令LD/SD (double word)</li>
+<li>增加了单独处理32bit的指令(ADD之类的现在等是64bit的)<ul>
+<li>ADDIW/SLLW/SRLW/SUBW/SRAW</li>
+<li>注意移位操作offset bits还是5bit</li>
+</ul>
+</li>
+<li>移位操作的offset bits因为64bit=32bit*2，从5bit”升级”成6bit</li>
+</ul>
+<p>其实RV128I指令集的拓展也类似，理论上可以拓展到imm无法支持offset bits的描述，但在此之前，量子计算机应该出来吧。</p>
+<h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><ul>
+<li><a href="https://content.riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf" target="_blank" rel="noopener">https://content.riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf</a></li>
+<li><a href="https://github.com/riscv/riscv-isa-manual" target="_blank" rel="noopener">risc-v manual</a>: <a href="https://github.com/riscv/riscv-isa-manual" target="_blank" rel="noopener">https://github.com/riscv/riscv-isa-manual</a></li>
+<li><a href="http://gfiles.chinaaet.com/scorpio/group/20170425/4000264810-6362872848946855461428672.pdf" target="_blank" rel="noopener">http://gfiles.chinaaet.com/scorpio/group/20170425/4000264810-6362872848946855461428672.pdf</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/18/wild-pig-chapter2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/11/18/wild-pig-chapter2/" class="post-title-link" itemprop="url">野猪书第二章读书笔记</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2019-11-18 16:33:11 / Modified: 16:34:25" itemprop="dateCreated datePublished" datetime="2019-11-18T16:33:11+08:00">2019-11-18</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="1-模型"><a href="#1-模型" class="headerlink" title="1. 模型"></a>1. 模型</h3><ul>
+<li>层次化模型(hierachy)<ul>
+<li>树状结构 -&gt; keep one-to-many or many-to-one</li>
+<li>no many-to-many</li>
+</ul>
+</li>
+<li>关系化模型 -&gt; sql<ul>
+<li>范式</li>
+<li>在复杂的或者多层的one-to-many结构中需要拆成多张表</li>
+</ul>
+</li>
+<li>文档化模型(document) -&gt; json<ul>
+<li>一列中可以保存复杂结构的数据</li>
+<li>比如列表形式的历史记录</li>
+<li>对于不复杂的one-to-many特别适合</li>
+<li>但是对于many-to-many不是那么有优势</li>
+<li>join不是那么友好，许多数据库都不支持join</li>
+</ul>
+</li>
+<li>网络化模型(network)<ul>
+<li>图状结构,many-to-many</li>
+<li>搜索和优化变得困难</li>
+<li>图计算数据库</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-存储模型"><a href="#2-存储模型" class="headerlink" title="2. 存储模型"></a>2. 存储模型</h3><p>规格化的（normalized): 所有重复的数值(主要是string)会被应设成id</p>
+<ul>
+<li>统一的格式和语法</li>
+<li>避免歧义</li>
+<li>i18n的时候分离了显示和存储要求，更加方便迁移</li>
+<li>更快的search</li>
+<li>[坏处]规格化的数据需要多张表，search时候需要更加多的join</li>
+</ul>
+<p>非规格化的(denormalized):</p>
+<ul>
+<li>如果数据库本身不支持join</li>
+<li>可能对于cache hit更加友好</li>
+</ul>
+<h3 id="3-schema设计"><a href="#3-schema设计" class="headerlink" title="3. schema设计"></a>3. schema设计</h3><ul>
+<li>读时schema模式（所谓无模式）：在读的时候检查需要的shchema是否合理</li>
+<li>写时schema模式，在写的时候做检查，否则不让写入</li>
+</ul>
+<p>实际上会是混合模式，写时会做一部分，读的时候做一部分。</p>
+<p>这些设计在column发生修改时候变的有所不同。</p>
+<ul>
+<li>读时schema可能只需要写入新的field的值就可以了：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">if (user &amp;&amp; user.name &amp;&amp; !user.first_name) &#123;</span><br><span class="line">    user.first_name = user.name.split(&quot; &quot;)[0]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>写时schema需要更新数据库table的schema</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ALTER TABLE users ADD COLUMN first_name text;</span><br><span class="line">UPDATE users SET first_name = split_part(name, &quot; &quot;, 1);    -- PostgreSQL</span><br><span class="line">UPDATE users SET first_name = substring_index(name, &quot; &quot;, 1);   -- MySQL</span><br></pre></td></tr></table></figure>
+<p>schema的更新(ALTER)是件代价不小的操作，另外UPDATE操作对于大表和有复杂关联的表系列也有不小的代价。一般而言可以将新加入的field设置为NULL，在读的时候进行设置。</p>
+<p>所以在这种情况下，如果数据中包含了不一致的schema结构（数据异构），例如：</p>
+<ul>
+<li>有许多的数据格式</li>
+<li>数据系统的schema结构不稳定，会发生变动</li>
+</ul>
+<h3 id="4-查询的局部性"><a href="#4-查询的局部性" class="headerlink" title="4. 查询的局部性"></a>4. 查询的局部性</h3><ul>
+<li>分成多张表的数据存储格式在读取连续数据时候会有一定的性能影响，需要多次索引</li>
+<li>修改数据时候，最好的是原地覆盖，因此建议写入的文档尽量小，并且不增加数据大小</li>
+<li>所以，为了提高局部性，可以<ul>
+<li>父表内嵌入子表数据（类似json）</li>
+<li>多索引集群表</li>
+<li>列式存储，列簇</li>
+</ul>
+</li>
+</ul>
+<h3 id="5-数据查询语言"><a href="#5-数据查询语言" class="headerlink" title="5. 数据查询语言"></a>5. 数据查询语言</h3><ul>
+<li>声明式：比如SQL，只是给出了我想要什么，给出范围，但是没有给出具体的操作流程</li>
+<li>命令式：定义为完整的操作流程，执行的命令。</li>
+</ul>
+<p>声明式隔离了底层的实现逻辑，使得：</p>
+<ul>
+<li>API变的简洁和容易理解</li>
+<li>提供优化的机会</li>
+<li>提供并行执行的实现方式</li>
+</ul>
+<h3 id="6-图状数据库"><a href="#6-图状数据库" class="headerlink" title="6. 图状数据库"></a>6. 图状数据库</h3><ul>
+<li>基本组成”顶点” + “边”。</li>
+<li>相关算法：导航，PageRank</li>
+</ul>
+<p>图状数据库模型：</p>
+<ul>
+<li>属性图（property graph）<ul>
+<li>Neon4j, Titan和InfiniteGraph </li>
+</ul>
+</li>
+<li>三元存储模型（triple-store）<ul>
+<li>Datomic, AllegroGraph</li>
+</ul>
+</li>
+</ul>
+<p>查询语句</p>
+<ul>
+<li>声明式查询语句：Cypher, SPARQL, Datalog</li>
+<li>命令式查询语句：Gremlin</li>
+<li>图处理框架: Pregel</li>
+</ul>
+<h4 id="6-1-属性图"><a href="#6-1-属性图" class="headerlink" title="6.1. 属性图"></a>6.1. 属性图</h4><p>在属性图模型中，一个顶点包含了：</p>
+<ul>
+<li>UUID</li>
+<li>Input/Output edge list</li>
+<li>property set (key-value pair)</li>
+</ul>
+<p>一个边包含了：</p>
+<ul>
+<li>UUID</li>
+<li>edage start/end node</li>
+<li>label describe relationship between start node and end node</li>
+<li>property set (key-value pair)</li>
+</ul>
+<p>在完成这些定义后，属性图可以很方便的使用多张关系数据库表来进行存储</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> vertices (</span><br><span class="line"> vertex_id <span class="built_in">integer</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line"> properties <span class="keyword">json</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> edges (</span><br><span class="line"> edge_id <span class="built_in">integer</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line"> tail_vertex <span class="built_in">integer</span> <span class="keyword">REFERENCES</span> vertices (vertex_id),</span><br><span class="line"> head_vertex <span class="built_in">integer</span> <span class="keyword">REFERENCES</span> vertices (vertex_id),</span><br><span class="line"> label <span class="built_in">text</span>,</span><br><span class="line"> properties <span class="keyword">json</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> edges_tails <span class="keyword">ON</span> edges (tail_vertex);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> edges_heads <span class="keyword">ON</span> edges (head_vertex);</span><br></pre></td></tr></table></figure>
+<p>属性图提供了非常强大的灵活性来描述一张图的结构。</p>
+<h4 id="6-2-Cypher"><a href="#6-2-Cypher" class="headerlink" title="6.2. Cypher"></a>6.2. Cypher</h4><p>基本思路是定义一个节点或者一条边需要满足的条件，查询的具体细节不关注，比如，我们想要查询这一样一个节点（人）：</p>
+<ul>
+<li>person，通过节点label为BORN_IN的outgoing edge，以及系列WITH_IN outgoing edage，最终抵达某个标注为US的节点</li>
+<li>person，通过节点label为LIVES_IN的outgoing edge，以及系列WITH_IN outgoing edage，抵达某个标注为US的节点</li>
+</ul>
+<p>最后打印出来person的名字：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">MATCH</span><br><span class="line"> (person) -[:BORN_IN]-&gt; () -[:WITHIN*0..]-&gt; (us:Location &#123;name:&apos;United States&apos;&#125;),</span><br><span class="line"> (person) -[:LIVES_IN]-&gt; () -[:WITHIN*0..]-&gt; (eu:Location &#123;name:&apos;Europe&apos;&#125;)</span><br><span class="line">RETURN person.name</span><br></pre></td></tr></table></figure>
+<p>如果用SQL来做，会成多次的表的join。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">WITH</span> <span class="keyword">RECURSIVE</span></span><br><span class="line"></span><br><span class="line"> <span class="comment">-- in_usa is the set of vertex IDs of all locations within the United States</span></span><br><span class="line"> in_usa(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> vertex_id <span class="keyword">FROM</span> vertices <span class="keyword">WHERE</span> properties-&gt;&gt;<span class="string">'name'</span> = <span class="string">'United States'</span></span><br><span class="line"> <span class="keyword">UNION</span></span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_usa <span class="keyword">ON</span> edges.head_vertex = in_usa.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'within'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- in_europe is the set of vertex IDs of all locations within Europe</span></span><br><span class="line"> in_europe(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> vertex_id <span class="keyword">FROM</span> vertices <span class="keyword">WHERE</span> properties-&gt;&gt;<span class="string">'name'</span> = <span class="string">'Europe'</span></span><br><span class="line"> <span class="keyword">UNION</span></span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_europe <span class="keyword">ON</span> edges.head_vertex = in_europe.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'within'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- born_in_usa is the set of vertex IDs of all people born in the US</span></span><br><span class="line"> born_in_usa(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_usa <span class="keyword">ON</span> edges.head_vertex = in_usa.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'born_in'</span></span><br><span class="line"> ),</span><br><span class="line"> </span><br><span class="line"> <span class="comment">-- lives_in_europe is the set of vertex IDs of all people living in Europe</span></span><br><span class="line"> lives_in_europe(vertex_id) <span class="keyword">AS</span> (</span><br><span class="line"> <span class="keyword">SELECT</span> edges.tail_vertex <span class="keyword">FROM</span> edges</span><br><span class="line"> <span class="keyword">JOIN</span> in_europe <span class="keyword">ON</span> edges.head_vertex = in_europe.vertex_id</span><br><span class="line"> <span class="keyword">WHERE</span> edges.label = <span class="string">'lives_in'</span></span><br><span class="line"> )</span><br><span class="line"> </span><br><span class="line"><span class="keyword">SELECT</span> vertices.properties-&gt;&gt;<span class="string">'name'</span></span><br><span class="line"><span class="keyword">FROM</span> vertices</span><br><span class="line"><span class="comment">-- join to find those people who were both born in the US *and* live in Europe</span></span><br><span class="line"><span class="keyword">JOIN</span> born_in_usa <span class="keyword">ON</span> vertices.vertex_id = born_in_usa.vertex_id</span><br><span class="line"><span class="keyword">JOIN</span> lives_in_europe <span class="keyword">ON</span> vertices.vertex_id = lives_in_europe.vertex_id;</span><br></pre></td></tr></table></figure>
+<h4 id="6-3-三元存储模型（triple-store）"><a href="#6-3-三元存储模型（triple-store）" class="headerlink" title="6.3. 三元存储模型（triple-store）"></a>6.3. 三元存储模型（triple-store）</h4><p>三元存储模型和属性图类似，但是颗粒度更加细。所有的描述都是一个三维的tuple： (subject, predicate, object).</p>
+<ul>
+<li>subject一定是某个节点</li>
+<li>predicate是一个edge或者一个属性</li>
+<li>object可以是一个节点（edge）或者一个属性值（属性）</li>
+</ul>
+<p>比如，可以这样来描述一张图：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@prefix : &lt;urn:example:&gt;.</span><br><span class="line">_:lucy a :Person.</span><br><span class="line">_:lucy :name &quot;Lucy&quot;.</span><br><span class="line">_:lucy :bornIn _:idaho.</span><br><span class="line">_:idaho a :Location.</span><br><span class="line">_:idaho :name &quot;Idaho&quot;.</span><br><span class="line">_:idaho :type &quot;state&quot;.</span><br><span class="line">_:idaho :within _:usa.</span><br><span class="line">_:usa a :Location.</span><br><span class="line">_:usa :name &quot;United States&quot;.</span><br><span class="line">_:usa :type &quot;country&quot;.</span><br><span class="line">_:usa :within _:namerica.</span><br><span class="line">_:namerica a :Location.</span><br><span class="line">_:namerica :name &quot;North America&quot;.</span><br><span class="line">_:namerica :type &quot;continent&quot;.</span><br></pre></td></tr></table></figure>
+<p>可以压缩一下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">@prefix : &lt;urn:example:&gt;.</span><br><span class="line">_:lucy a :Person; :name &quot;Lucy&quot;; :bornIn _:idaho.</span><br><span class="line">_:idaho a :Location; :name &quot;Idaho&quot;; :type &quot;state&quot;; :within _:usa.</span><br><span class="line">_:usa a :Location; :name &quot;United States&quot;; :type &quot;country&quot;; :within _:namerica.</span><br><span class="line">_:namerica a :Location; :name &quot;North America&quot;; :type &quot;continent&quot;.</span><br></pre></td></tr></table></figure>
+<h3 id="7-其他模型"><a href="#7-其他模型" class="headerlink" title="7. 其他模型"></a>7. 其他模型</h3><ul>
+<li>针对DNA（只有四个值）的基因组数据，GenBank</li>
+<li>针对海量数据数据库</li>
+<li>针对全文搜索的数据库</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/" class="post-title-link" itemprop="url">RISC-V 寄存器 overview</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2019-11-17 00:11:47 / Modified: 10:24:52" itemprop="dateCreated datePublished" datetime="2019-11-17T00:11:47+08:00">2019-11-17</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-Overview"><a href="#1-Overview" class="headerlink" title="1. Overview"></a>1. Overview</h1><p>RISC-V顾名思义是一个RISC指令集，有一些特性（特别和x86相比）：</p>
+<ul>
+<li>大量的寄存器</li>
+<li>固定为0的寄存器(x0): “零寄存器”（zero register，注：其值永远为零）</li>
+<li>非load和save指令不能访问内存，只能在寄存器间操作</li>
+<li>不提供context save和restore的命令</li>
+<li>所有指令都是固定长度的32bit</li>
+</ul>
+<p>指令长度固定32bit使得处理64bit的立即数，一定至少要两条指令。</p>
+<h2 id="1-1-指令集和拓展"><a href="#1-1-指令集和拓展" class="headerlink" title="1.1. 指令集和拓展"></a>1.1. 指令集和拓展</h2><p>RISC-V指令集最基本的指令只包含integer instruction，包括RV32I和RV64I。其中RV32I是社区声明过已经冻结修改的。（其实RV64I算是拓展，而且也被冻结了）</p>
+<p>具体的指令情况如下（来自维基百科）：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>指令集名称</th>
+<th>描述</th>
+<th>版本</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>基本指令集</td>
+</tr>
+<tr>
+<td>RV32I</td>
+<td>基本整数指令集, 32位</td>
+<td>2.0</td>
+<td>冻结</td>
+</tr>
+<tr>
+<td>RV32E</td>
+<td>基本整数指令集(嵌入式系统), 32位, 16 寄存器</td>
+<td>1.9</td>
+<td>开放</td>
+</tr>
+<tr>
+<td>RV64I</td>
+<td>基本整数指令集, 64位</td>
+<td>2.0</td>
+<td>冻结</td>
+</tr>
+<tr>
+<td>RV128I</td>
+<td>基本整数指令集, 128位</td>
+<td>1.7</td>
+<td>开放</td>
+</tr>
+<tr>
+<td>标准扩展指令集</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>M|整数乘除法标准扩展|2.0|冻结<br>A|不可中断指令(Atomic)标准扩展|2.0|冻结<br>F|单精确度浮点运算标准扩展|2.0|冻结<br>D|双倍精确度浮点运算标准扩展|2.0|冻结<br>G|所有以上的扩展指令集以及基本指令集的总和的简称|不适用|不适用<br>Q|四倍精确度浮点运算标准扩展|2.0|冻结<br>L|十进制浮点运算标准扩展|0.0|开放<br>C|压缩指令标准扩展|2.0|冻结<br>B|位操作标准扩展|0.36|开放<br>J|动态指令翻译标准扩展|0.0|开放<br>T|顺序存储器访问标准扩展|0.0|开放<br>P|单指令多数据流（SIMD）运算标准扩展|0.1|开放<br>V|向量运算标准扩展|0.2|开放<br>N|用户中断标准扩展|1.1|开放</p>
+<h1 id="2-Register"><a href="#2-Register" class="headerlink" title="2. Register"></a>2. Register</h1><p>基础的寄存器包括32个整数寄存器（嵌入式版本是16个整数寄存器），也就是RV32I的寄存器，x0-x31。其中x0是固定为0的寄存器，而因为寄存器够用，所以没有单独的Stack寄存器。</p>
+<p>引入RV32F和RV32D会引入32个浮点寄存器，f0-f31。</p>
+<p>RISC-V的ABI中定义了各个寄存器的calling convension：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Register</th>
+<th>ABI Name</th>
+<th>Description</th>
+<th>Saver</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>x0| zero |Hard-wired zero |—<br>x1 |ra |Return address |Caller<br>x2 |sp |Stack pointer |Callee<br>x3 |gp |Global pointer |—<br>x4 |tp |Thread pointer |—<br>x5–7 |t0–2 |Temporaries |Caller<br>x8 |s0/fp |Saved register/frame pointer |Callee<br>x9 |s1 |Saved register |Callee<br>x10–11 |a0–1 |Function arguments/return values |Caller<br>x12–17 |a2–7 |Function arguments |Caller<br>x18–27 |s2–11 |Saved registers |Callee<br>x28–31 |t3–6 |Temporaries |Caller<br>f0–7 |ft0–7 |FP temporaries |Caller<br>f8–9 |fs0–1 |FP saved registers |Callee<br>f10–11 |fa0–1 |FP arguments/return values |Caller<br>f12–17 |fa2–7 |FP arguments |Caller<br>f18–27 |fs2–11 |FP saved registers |Callee<br>f28–31 |ft8–11 |FP temporaries |Caller</p>
+<h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><p>参考：</p>
+<ul>
+<li><a href="http://crva.io/documents/RISC-V-Reader-Chinese-v2p1.pdf" target="_blank" rel="noopener">RISC-V 手册</a></li>
+<li><a href="https://zh.wikipedia.org/wiki/RISC-V" target="_blank" rel="noopener">维基百科: RISC-V</a></li>
+<li><a href="https://github.com/cnrv/riscv-soc-book" target="_blank" rel="noopener">关于RISC-V你所需要知道的一切 Github</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/14/ARM-Register-Quick-View/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/11/14/ARM-Register-Quick-View/" class="post-title-link" itemprop="url">ARM ISA Overview</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-11-14 17:23:35" itemprop="dateCreated datePublished" datetime="2019-11-14T17:23:35+08:00">2019-11-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-11-27 19:53:41" itemprop="dateModified" datetime="2019-11-27T19:53:41+08:00">2019-11-27</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-指令"><a href="#1-指令" class="headerlink" title="1. 指令"></a>1. 指令</h1><p>ARM中能看到的指令集包括：</p>
+<ul>
+<li><strong>thumb</strong>: 16bit的指令集</li>
+<li><strong>thumb-2</strong>: thumb的升级版，16bit/32bit混合指令集</li>
+<li><strong>arm</strong>: 32bit的指令集</li>
+<li><strong>A32</strong>: ARMv8中的<strong>arm</strong>指令集</li>
+<li><strong>T32</strong>: ARMv8中的<strong>thumb-2</strong>指令集，同时包含一些拓展</li>
+<li><strong>A64</strong>: ARMv8的64bit的指令集</li>
+<li><strong>Neon</strong>: ARM的SIMD指令集</li>
+<li></li>
+</ul>
+<p>ARMv8支持两种state：</p>
+<ul>
+<li>AArch64: 使用A64指令集，一种32bit fix length的指令集<ul>
+<li>支持31个64bit的通用寄存器</li>
+<li>使用64bit的PC和SP寄存器</li>
+<li>支持32个128bit的SIMD寄存器</li>
+</ul>
+</li>
+<li>AArch32: 支持A32或者T32指令集<ul>
+<li>支持32个32bit的通用寄存器</li>
+<li>使用32bit的PC和SP寄存器</li>
+<li>支持32个64bit的SIMD寄存器</li>
+</ul>
+</li>
+</ul>
+<p>注意的是ARMv8的A32和T32向前兼容的同时，还包括了其他一些拓展。</p>
+<h1 id="2-ARM-Profile"><a href="#2-ARM-Profile" class="headerlink" title="2. ARM Profile"></a>2. ARM Profile</h1><p>ARM系列一般都能看到A，R和M系列，分别代表着：普通应用，实时计算和移动处理的三种不同的需求。</p>
+<p>具体以ARMv8为例子，下面摘自ARM的官方文档：</p>
+<blockquote>
+<ul>
+<li>A Application profile:<ul>
+<li>Supports a Virtual Memory System Architecture (VMSA) based on a Memory Management Unit (MMU).</li>
+<li>Supports the A64, A32, and T32 instruction sets.</li>
+</ul>
+</li>
+<li>R Real-time profile:<ul>
+<li>Supports a Protected Memory System Architecture (PMSA) based on a Memory Protection Unit (MPU).<br>-Supports the A32 and T32 instruction sets.</li>
+</ul>
+</li>
+<li>M Microcontroller profile, described in this manual:<ul>
+<li>Implements a programmers’ model designed for low-latency interrupt processing, with hardware stacking of registers and support for writing interrupt handlers in high-level languages.</li>
+<li>Optionally implements a variant of the R-profile PMSA.</li>
+<li>Supports a variant of the T32 instruction set.</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<h1 id="3-LLVM-ARMv7-Register"><a href="#3-LLVM-ARMv7-Register" class="headerlink" title="3. LLVM ARMv7 Register"></a>3. LLVM ARMv7 Register</h1><p>我们可以在<code>lib/target/ARM/ARMRegisterInfo.td</code>中找到所有寄存器的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// Registers are identified with 4-bit ID numbers.</span><br><span class="line">class ARMReg&lt;bits&lt;16&gt; Enc, string n, list&lt;Register&gt; subregs = [],</span><br><span class="line">             list&lt;string&gt; altNames = []&gt; : Register&lt;n, altNames&gt; &#123;</span><br><span class="line">  let HWEncoding = Enc;</span><br><span class="line">  let Namespace = &quot;ARM&quot;;</span><br><span class="line">  let SubRegs = subregs;</span><br><span class="line">  // All bits of ARM registers with sub-registers are covered by sub-registers.</span><br><span class="line">  let CoveredBySubRegs = 1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class ARMFReg&lt;bits&lt;16&gt; Enc, string n&gt; : Register&lt;n&gt; &#123;</span><br><span class="line">  let HWEncoding = Enc;</span><br><span class="line">  let Namespace = &quot;ARM&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述是两个基类，定义了整数寄存器和浮点寄存器的基类。总结来说，ARMv7的数据存储寄存器包括：</p>
+<ul>
+<li><strong>r1-r12</strong> 32bit integer register</li>
+<li><strong>pc</strong>, <strong>lr</strong>, <strong>sp</strong> 32bit integer register</li>
+<li><strong>q0-q16</strong> 128bit integer register<ul>
+<li>sub-reg: <strong>d0-d15</strong> 64bit float register<ul>
+<li>sub-reg: <strong>s0-s31</strong> 32bit float register</li>
+</ul>
+</li>
+<li>sub-reg: <strong>d16-d31</strong> 64bit float regiter</li>
+</ul>
+</li>
+</ul>
+<p>一般而言，有些寄存器有固定/约定的用处：</p>
+<ul>
+<li>pc  == Program Counter</li>
+<li>lr  == Link Register</li>
+<li>sp  == Stack Pointer</li>
+<li>r12 == ip (scratch)</li>
+<li>r7  == Frame Pointer (thumb-style backtraces)</li>
+<li>r9  == May be reserved as Thread Register</li>
+<li>r11 == Frame Pointer (arm-style backtraces)</li>
+<li>r10 == Stack Limit</li>
+</ul>
+<p>另外还有一系列控制寄存器，以下仅举例后续用到再做分析。除了APSR，大部分其他控制寄存器都是要在非用户模式下才能操作：</p>
+<ul>
+<li>Program Status Register<ul>
+<li><strong>APSR</strong>: Application Program Status Register, 32bit integer register<ul>
+<li>类似与x86的EFLAGs，用于记录condition flag。</li>
+</ul>
+</li>
+<li><strong>CPSR</strong>: Current Program Status Register, 32bit integer register<ul>
+<li>似乎CPSR是APSR的alias。在用户模式叫APSR，在其他模式叫CPSR。</li>
+</ul>
+</li>
+<li><strong>SPSR</strong>: Saved Program Status Register, 32bit integer register<ul>
+<li>仅在非用户模式下使用，用于保存CPSR的信息，方便跳转回来时候回复环境。</li>
+</ul>
+</li>
+<li><strong>FPSCR</strong>: Floating-Point Status and Control Register, 32bit integer register<ul>
+<li>浮点状态寄存器。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Float Special Registe(Only privileged mode)<ul>
+<li><strong>FPSID</strong>: Floating-Point System ID Register, 32bit integer register<ul>
+<li>浮点系统设置寄存器，用来表明NEON/VFP等实现是否被使用。</li>
+</ul>
+</li>
+<li><strong>FPEXC</strong>: Floating-point Exception Register, 32bit integer register<ul>
+<li>用于表明在exception时候如何处理，特别是在NEON/VFP模式下面。</li>
+</ul>
+</li>
+<li><strong>FPINST and FPINST2</strong>Floating-Point Instruction Registers, 32bit integer register</li>
+</ul>
+</li>
+<li><strong>ITSTATE</strong>: Thumb if-then指令状态寄存器。</li>
+</ul>
+<h2 id="3-1-通用寄存器定义"><a href="#3-1-通用寄存器定义" class="headerlink" title="3.1. 通用寄存器定义"></a>3.1. 通用寄存器定义</h2><ul>
+<li>r0 - r15</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">// Integer registers</span><br><span class="line">def R0  : ARMReg&lt; 0, &quot;r0&quot;&gt;,  DwarfRegNum&lt;[0]&gt;;</span><br><span class="line">def R1  : ARMReg&lt; 1, &quot;r1&quot;&gt;,  DwarfRegNum&lt;[1]&gt;;</span><br><span class="line">def R2  : ARMReg&lt; 2, &quot;r2&quot;&gt;,  DwarfRegNum&lt;[2]&gt;;</span><br><span class="line">def R3  : ARMReg&lt; 3, &quot;r3&quot;&gt;,  DwarfRegNum&lt;[3]&gt;;</span><br><span class="line">def R4  : ARMReg&lt; 4, &quot;r4&quot;&gt;,  DwarfRegNum&lt;[4]&gt;;</span><br><span class="line">def R5  : ARMReg&lt; 5, &quot;r5&quot;&gt;,  DwarfRegNum&lt;[5]&gt;;</span><br><span class="line">def R6  : ARMReg&lt; 6, &quot;r6&quot;&gt;,  DwarfRegNum&lt;[6]&gt;;</span><br><span class="line">def R7  : ARMReg&lt; 7, &quot;r7&quot;&gt;,  DwarfRegNum&lt;[7]&gt;;</span><br><span class="line">// These require 32-bit instructions.</span><br><span class="line">let CostPerUse = 1 in &#123;  // extra cost when using</span><br><span class="line">def R8  : ARMReg&lt; 8, &quot;r8&quot;&gt;,  DwarfRegNum&lt;[8]&gt;;</span><br><span class="line">def R9  : ARMReg&lt; 9, &quot;r9&quot;&gt;,  DwarfRegNum&lt;[9]&gt;;</span><br><span class="line">def R10 : ARMReg&lt;10, &quot;r10&quot;&gt;, DwarfRegNum&lt;[10]&gt;;</span><br><span class="line">def R11 : ARMReg&lt;11, &quot;r11&quot;&gt;, DwarfRegNum&lt;[11]&gt;;</span><br><span class="line">def R12 : ARMReg&lt;12, &quot;r12&quot;&gt;, DwarfRegNum&lt;[12]&gt;;</span><br><span class="line">let RegAltNameIndices = [RegNamesRaw] in &#123; // 定义别名</span><br><span class="line">def SP  : ARMReg&lt;13, &quot;sp&quot;, [], [&quot;r13&quot;]&gt;,  DwarfRegNum&lt;[13]&gt;;</span><br><span class="line">def LR  : ARMReg&lt;14, &quot;lr&quot;, [], [&quot;r14&quot;]&gt;,  DwarfRegNum&lt;[14]&gt;;</span><br><span class="line">def PC  : ARMReg&lt;15, &quot;pc&quot;, [], [&quot;r15&quot;]&gt;,  DwarfRegNum&lt;[15]&gt;;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>q0 - q15</li>
+</ul>
+<p>q系列的寄存器包含了一系列的子寄存器，因此需要一系列的SubRegisterIndex来定义他们的关系：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">def dsub_0 : SubRegIndex&lt;64&gt;;</span><br><span class="line">def dsub_1 : SubRegIndex&lt;64, 64&gt;;</span><br></pre></td></tr></table></figure>
+<p>第一条描述了qx中的d(2x)index：从0开始，长度为64bit；第二条描述了d(2x+1)index：从64bit开始，长度64bit。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">// Advanced SIMD (NEON) defines 16 quad-word aliases</span><br><span class="line">let SubRegIndices = [dsub_0, dsub_1] in &#123;</span><br><span class="line">def Q0  : ARMReg&lt; 0,  &quot;q0&quot;, [D0,   D1]&gt;;</span><br><span class="line">def Q1  : ARMReg&lt; 1,  &quot;q1&quot;, [D2,   D3]&gt;;</span><br><span class="line">def Q2  : ARMReg&lt; 2,  &quot;q2&quot;, [D4,   D5]&gt;;</span><br><span class="line">def Q3  : ARMReg&lt; 3,  &quot;q3&quot;, [D6,   D7]&gt;;</span><br><span class="line">def Q4  : ARMReg&lt; 4,  &quot;q4&quot;, [D8,   D9]&gt;;</span><br><span class="line">def Q5  : ARMReg&lt; 5,  &quot;q5&quot;, [D10, D11]&gt;;</span><br><span class="line">def Q6  : ARMReg&lt; 6,  &quot;q6&quot;, [D12, D13]&gt;;</span><br><span class="line">def Q7  : ARMReg&lt; 7,  &quot;q7&quot;, [D14, D15]&gt;;</span><br><span class="line">&#125;</span><br><span class="line">let SubRegIndices = [dsub_0, dsub_1] in &#123;</span><br><span class="line">def Q8  : ARMReg&lt; 8,  &quot;q8&quot;, [D16, D17]&gt;;</span><br><span class="line">def Q9  : ARMReg&lt; 9,  &quot;q9&quot;, [D18, D19]&gt;;</span><br><span class="line">def Q10 : ARMReg&lt;10, &quot;q10&quot;, [D20, D21]&gt;;</span><br><span class="line">def Q11 : ARMReg&lt;11, &quot;q11&quot;, [D22, D23]&gt;;</span><br><span class="line">def Q12 : ARMReg&lt;12, &quot;q12&quot;, [D24, D25]&gt;;</span><br><span class="line">def Q13 : ARMReg&lt;13, &quot;q13&quot;, [D26, D27]&gt;;</span><br><span class="line">def Q14 : ARMReg&lt;14, &quot;q14&quot;, [D28, D29]&gt;;</span><br><span class="line">def Q15 : ARMReg&lt;15, &quot;q15&quot;, [D30, D31]&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这里的<code>let SubRegIndices = [dsub_0, dsub_1]</code>。</p>
+<h2 id="3-2-控制寄存器的定义"><a href="#3-2-控制寄存器的定义" class="headerlink" title="3.2. 控制寄存器的定义"></a>3.2. 控制寄存器的定义</h2><p>相对没有什么花头，简单的定义，略掉一些。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">// Current Program Status Register.</span><br><span class="line">// We model fpscr with two registers: FPSCR models the control bits and will be</span><br><span class="line">// reserved. FPSCR_NZCV models the flag bits and will be unreserved. APSR_NZCV</span><br><span class="line">// models the APSR when it&apos;s accessed by some special instructions. In such cases</span><br><span class="line">// it has the same encoding as PC.</span><br><span class="line">def CPSR       : ARMReg&lt;0,  &quot;cpsr&quot;&gt;;</span><br><span class="line">def APSR       : ARMReg&lt;15, &quot;apsr&quot;&gt;;</span><br><span class="line">def APSR_NZCV  : ARMReg&lt;15, &quot;apsr_nzcv&quot;&gt;;</span><br><span class="line">def SPSR       : ARMReg&lt;2,  &quot;spsr&quot;&gt;;</span><br><span class="line">def FPSCR      : ARMReg&lt;3,  &quot;fpscr&quot;&gt;;</span><br><span class="line">def FPSCR_NZCV : ARMReg&lt;3,  &quot;fpscr_nzcv&quot;&gt; &#123;</span><br><span class="line">  let Aliases = [FPSCR];</span><br><span class="line">&#125;</span><br><span class="line">def ITSTATE    : ARMReg&lt;4, &quot;itstate&quot;&gt;;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>唯一可以注意的是，为了一些操作方便，这里对于NZCV的flags做了alias的定义。</p>
+<h2 id="3-3-定义RegisterClass"><a href="#3-3-定义RegisterClass" class="headerlink" title="3.3. 定义RegisterClass"></a>3.3. 定义RegisterClass</h2><p>随后需要告诉LLVM如何使用这些寄存器，或者说哪些寄存器是一类的。比如，对于通用寄存器的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">def GPR : RegisterClass&lt;&quot;ARM&quot;, [i32], 32, (add (sequence &quot;R%u&quot;, 0, 12),</span><br><span class="line">                                               SP, LR, PC)&gt; &#123;</span><br><span class="line">  // Allocate LR as the first CSR since it is always saved anyway.</span><br><span class="line">  // For Thumb1 mode, we don&apos;t want to allocate hi regs at all, as we don&apos;t</span><br><span class="line">  // know how to spill them. If we make our prologue/epilogue code smarter at</span><br><span class="line">  // some point, we can go back to using the above allocation orders for the</span><br><span class="line">  // Thumb1 instructions that know how to use hi regs.</span><br><span class="line">  let AltOrders = [(add LR, GPR), (trunc GPR, 8),</span><br><span class="line">                   (add (trunc GPR, 8), R12, LR, (shl GPR, 8))];</span><br><span class="line">  let AltOrderSelect = [&#123;</span><br><span class="line">      return MF.getSubtarget&lt;ARMSubtarget&gt;().getGPRAllocationOrder(MF);</span><br><span class="line">  &#125;];</span><br><span class="line">  let DiagnosticString = &quot;operand must be a register in range [r0, r15]&quot;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// GPRs without the PC.  Some ARM instructions do not allow the PC in</span><br><span class="line">// certain operand slots, particularly as the destination.  Primarily</span><br><span class="line">// useful for disassembly.</span><br><span class="line">def GPRnopc : RegisterClass&lt;&quot;ARM&quot;, [i32], 32, (sub GPR, PC)&gt; &#123;</span><br><span class="line">  let AltOrders = [(add LR, GPRnopc), (trunc GPRnopc, 8),</span><br><span class="line">                   (add (trunc GPRnopc, 8), R12, LR, (shl GPRnopc, 8))];</span><br><span class="line">  let AltOrderSelect = [&#123;</span><br><span class="line">      return MF.getSubtarget&lt;ARMSubtarget&gt;().getGPRAllocationOrder(MF);</span><br><span class="line">  &#125;];</span><br><span class="line">  let DiagnosticString = &quot;operand must be a register in range [r0, r14]&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里定义了：</p>
+<ul>
+<li>class包含了哪些寄存器</li>
+<li>选择的顺序</li>
+<li>diagnostic信息</li>
+</ul>
+<h1 id="4-LLVM-ARMv8-Register"><a href="#4-LLVM-ARMv8-Register" class="headerlink" title="4. LLVM ARMv8 Register"></a>4. LLVM ARMv8 Register</h1><p>ARMv8的通用寄存器升级到了64bit，包含了</p>
+<ul>
+<li>X0-X31, 最后三个为FR,LR,SR,XZR<ul>
+<li>sub-register：所有X寄存器的低32bit定义为：W0-W31，最后两个为WSP,WZR</li>
+</ul>
+</li>
+<li>V0-V31, 类似于ARMv7中的Q0-Q31, 增加了一倍的浮点寄存器<ul>
+<li>d,s和ARMv7一致，额外增加了8bit的b类型寄存器</li>
+<li>v是用来引用新增的vector model的。</li>
+</ul>
+</li>
+</ul>
+<p>EFLAGS被单独移出去了，更加详细控制寄存器信息，等到对应的命令时候再描述。</p>
+<h2 id="4-1-通用寄存器定义"><a href="#4-1-通用寄存器定义" class="headerlink" title="4.1. 通用寄存器定义"></a>4.1. 通用寄存器定义</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">def W0    : AArch64Reg&lt;0,   &quot;w0&quot; &gt;, DwarfRegNum&lt;[0]&gt;;</span><br><span class="line">def W1    : AArch64Reg&lt;1,   &quot;w1&quot; &gt;, DwarfRegNum&lt;[1]&gt;;</span><br><span class="line">def W2    : AArch64Reg&lt;2,   &quot;w2&quot; &gt;, DwarfRegNum&lt;[2]&gt;;</span><br><span class="line">def W3    : AArch64Reg&lt;3,   &quot;w3&quot; &gt;, DwarfRegNum&lt;[3]&gt;;</span><br><span class="line">def W4    : AArch64Reg&lt;4,   &quot;w4&quot; &gt;, DwarfRegNum&lt;[4]&gt;;</span><br><span class="line">def W5    : AArch64Reg&lt;5,   &quot;w5&quot; &gt;, DwarfRegNum&lt;[5]&gt;;</span><br><span class="line">...</span><br><span class="line">def W28   : AArch64Reg&lt;28, &quot;w28&quot;&gt;, DwarfRegNum&lt;[28]&gt;;</span><br><span class="line">def W29   : AArch64Reg&lt;29, &quot;w29&quot;&gt;, DwarfRegNum&lt;[29]&gt;;</span><br><span class="line">def W30   : AArch64Reg&lt;30, &quot;w30&quot;&gt;, DwarfRegNum&lt;[30]&gt;;</span><br><span class="line">def WSP   : AArch64Reg&lt;31, &quot;wsp&quot;&gt;, DwarfRegNum&lt;[31]&gt;;</span><br><span class="line">def WZR   : AArch64Reg&lt;31, &quot;wzr&quot;&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [sub_32] in &#123;</span><br><span class="line">def X0    : AArch64Reg&lt;0,   &quot;x0&quot;,  [W0]&gt;, DwarfRegAlias&lt;W0&gt;;</span><br><span class="line">def X1    : AArch64Reg&lt;1,   &quot;x1&quot;,  [W1]&gt;, DwarfRegAlias&lt;W1&gt;;</span><br><span class="line">def X2    : AArch64Reg&lt;2,   &quot;x2&quot;,  [W2]&gt;, DwarfRegAlias&lt;W2&gt;;</span><br><span class="line">def X3    : AArch64Reg&lt;3,   &quot;x3&quot;,  [W3]&gt;, DwarfRegAlias&lt;W3&gt;;</span><br><span class="line">def X4    : AArch64Reg&lt;4,   &quot;x4&quot;,  [W4]&gt;, DwarfRegAlias&lt;W4&gt;;</span><br><span class="line">def X5    : AArch64Reg&lt;5,   &quot;x5&quot;,  [W5]&gt;, DwarfRegAlias&lt;W5&gt;;</span><br><span class="line">...</span><br><span class="line">def X24   : AArch64Reg&lt;24, &quot;x24&quot;, [W24]&gt;, DwarfRegAlias&lt;W24&gt;;</span><br><span class="line">def X28   : AArch64Reg&lt;28, &quot;x28&quot;, [W28]&gt;, DwarfRegAlias&lt;W28&gt;;</span><br><span class="line">def FP    : AArch64Reg&lt;29, &quot;x29&quot;, [W29]&gt;, DwarfRegAlias&lt;W29&gt;;</span><br><span class="line">def LR    : AArch64Reg&lt;30, &quot;x30&quot;, [W30]&gt;, DwarfRegAlias&lt;W30&gt;;</span><br><span class="line">def SP    : AArch64Reg&lt;31, &quot;sp&quot;,  [WSP]&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line">def XZR   : AArch64Reg&lt;31, &quot;xzr&quot;, [WZR]&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>没有什么特别的。</p>
+<h2 id="4-2-SIMD-amp-FP寄存器"><a href="#4-2-SIMD-amp-FP寄存器" class="headerlink" title="4.2. SIMD &amp; FP寄存器"></a>4.2. SIMD &amp; FP寄存器</h2><p>普通的定义没有什么特别，只是加了一个b寄存器。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">def B0    : AArch64Reg&lt;0,   &quot;b0&quot;&gt;, DwarfRegNum&lt;[64]&gt;;</span><br><span class="line">...</span><br><span class="line">def B31   : AArch64Reg&lt;31, &quot;b31&quot;&gt;, DwarfRegNum&lt;[95]&gt;;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [bsub] in &#123;</span><br><span class="line">def H0    : AArch64Reg&lt;0,   &quot;h0&quot;, [B0]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def H31   : AArch64Reg&lt;31, &quot;h31&quot;, [B31]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [hsub] in &#123;</span><br><span class="line">def S0    : AArch64Reg&lt;0,   &quot;s0&quot;, [H0]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def S31   : AArch64Reg&lt;31, &quot;s31&quot;, [H31]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [ssub], RegAltNameIndices = [vreg, vlist1] in &#123;</span><br><span class="line">def D0    : AArch64Reg&lt;0,   &quot;d0&quot;, [S0], [&quot;v0&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def D31   : AArch64Reg&lt;31, &quot;d31&quot;, [S31], [&quot;v31&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [dsub], RegAltNameIndices = [vreg, vlist1] in &#123;</span><br><span class="line">def Q0    : AArch64Reg&lt;0,   &quot;q0&quot;, [D0], [&quot;v0&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def Q31   : AArch64Reg&lt;31, &quot;q31&quot;, [D31], [&quot;v31&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>SubRegisterIndex定义不再赘述。注意这里sub-register再一个parent-register没有两个了，因为通用寄存器本身翻倍了。</p>
+<h2 id="4-3-Register-Vector定义"><a href="#4-3-Register-Vector定义" class="headerlink" title="4.3. Register Vector定义"></a>4.3. Register Vector定义</h2><p>有意思的是LLVM是如何定义ARMv8中的vector value的使用的。</p>
+<p>首先需要看到的是LLVM对于value type的定义，在LLVM/include/Target/ValueTypes.td中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">def v8i16  : ValueType&lt;128, 38&gt;;   //  8 x i16 vector value</span><br><span class="line">def v16i16 : ValueType&lt;256, 39&gt;;   // 16 x i16 vector value</span><br><span class="line">def v32i16 : ValueType&lt;512, 40&gt;;   // 32 x i16 vector value</span><br><span class="line">def v64i16 : ValueType&lt;1024,41&gt;;   // 64 x i16 vector value</span><br><span class="line">def v128i16: ValueType&lt;2048,42&gt;;   //128 x i16 vector value</span><br><span class="line"></span><br><span class="line">def v1i32    : ValueType&lt;32 , 43&gt;;   //  1 x i32 vector value</span><br><span class="line">def v2i32    : ValueType&lt;64 , 44&gt;;   //  2 x i32 vector value</span><br><span class="line">def v3i32    : ValueType&lt;96 , 45&gt;;   //  3 x i32 vector value</span><br><span class="line">def v4i32    : ValueType&lt;128, 46&gt;;   //  4 x i32 vector value</span><br><span class="line">def v5i32    : ValueType&lt;160, 47&gt;;   //  5 x i32 vector value</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>这些ValueType会被用在定义RegisterClass时候：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">def FPR64 : RegisterClass&lt;&quot;AArch64&quot;, [f64, i64, v2f32, v1f64, v8i8, v4i16, v2i32,</span><br><span class="line">                                    v1i64, v4f16],</span><br><span class="line">                                    64, (sequence &quot;D%u&quot;, 0, 31)&gt;;</span><br><span class="line">// We don&apos;t (yet) have an f128 legal type, so don&apos;t use that here. We</span><br><span class="line">// normalize 128-bit vectors to v2f64 for arg passing and such, so use</span><br><span class="line">// that here.</span><br><span class="line">def FPR128 : RegisterClass&lt;&quot;AArch64&quot;,</span><br><span class="line">                           [v16i8, v8i16, v4i32, v2i64, v4f32, v2f64, f128,</span><br><span class="line">                            v8f16],</span><br><span class="line">                           128, (sequence &quot;Q%u&quot;, 0, 31)&gt;;</span><br><span class="line">// The lower 16 vector registers.  Some instructions can only take registers</span><br><span class="line">// in this range.</span><br><span class="line">def FPR128_lo : RegisterClass&lt;&quot;AArch64&quot;,</span><br><span class="line">                              [v16i8, v8i16, v4i32, v2i64, v4f32, v2f64, v8f16],</span><br><span class="line">                              128, (trunc FPR128, 16)&gt;;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/12/wild-pig-chapter1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/11/12/wild-pig-chapter1/" class="post-title-link" itemprop="url">野猪书第一章读书笔记</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-11-12 23:02:48" itemprop="dateCreated datePublished" datetime="2019-11-12T23:02:48+08:00">2019-11-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-16 23:09:50" itemprop="dateModified" datetime="2019-12-16T23:09:50+08:00">2019-12-16</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="数据密集型应用系统"><a href="#数据密集型应用系统" class="headerlink" title="数据密集型应用系统"></a>数据密集型应用系统</h2><ul>
+<li>数据库</li>
+<li>高速缓存</li>
+<li>索引</li>
+<li>流式处理</li>
+<li>批处理</li>
+</ul>
+<p>这里比较有意思的是索引，一般而言，索引不会单独领出来说，往往集成在数据库中。但实际上索引也许可以单独作为一个组件存在。而这些组件往往也不是独立存在，比如Es就包含了前三部分。</p>
+<p>另外，现在的数据体系中，不会是单独一个组件而存在，而是多个组件或者说上述所有组件的共同合作结果。</p>
+<p>比如一个响应用户请求的系统：</p>
+<ul>
+<li>需要一个高速缓存来快速响应某些通用请求</li>
+<li>需要一个数据库来存储所有的信息</li>
+<li>需要一个全文索引来方便查找</li>
+<li>需要一个消息队列来处理异步任务</li>
+</ul>
+<h2 id="三个系统设计关键问题"><a href="#三个系统设计关键问题" class="headerlink" title="三个系统设计关键问题"></a>三个系统设计关键问题</h2><ul>
+<li>可靠性<ul>
+<li>提供客户需要的功能</li>
+<li>容忍客户错误或者不正确的操作</li>
+<li>足够强的性能</li>
+<li>足够强的安全性</li>
+</ul>
+</li>
+<li>可扩展性</li>
+<li>可维护性</li>
+</ul>
+<h2 id="可靠性"><a href="#可靠性" class="headerlink" title="可靠性"></a>可靠性</h2><p>首先需要注意的是，可靠性并不意味着我们需要对所有可能发生的故障或者意外事件都要进行处理。追求无穷的可靠性，意味着无穷的成本。</p>
+<p>因此，可靠性或者说容错是有针对性的，或者说有范围的。</p>
+<p>MTTF：平均无故障事件</p>
+<p>错误类型：</p>
+<ul>
+<li>硬件错误：一般而言可以通过硬件冗余进行处理</li>
+<li>软件错误：相对难有快速解决方案，只能通过经验或者监控来缓解</li>
+<li>人为失误：比如配置错误<ul>
+<li>精心设计API</li>
+<li>沙盒或者dry run</li>
+<li>充分测试</li>
+<li>亡羊补牢，这需要快速回滚等支持</li>
+<li>监控</li>
+</ul>
+</li>
+</ul>
+<h2 id="可扩展性"><a href="#可扩展性" class="headerlink" title="可扩展性"></a>可扩展性</h2><p>首先的问题是如何描述性能，一般而言关心吞吐量(throughput)，也就是从server角度来看，单位时间内能够处理请求的数目。吞吐量和latency是相关的，throughput = 1 / latency。</p>
+<p>另外一个角度是从客户角度来看，也就是响应时间（response time），从客户发送请求，到返回结果的间隔。</p>
+<p>这些描述，一般而言可以从统计学的角度来看，也就是平均数，中位数， 95%（比95%的请求都要高），99%甚至99.99%。这些统计信息往往和服务质量目标（Service Level Objective）或者服务质量协议(Service Level Agreements)绑定在一起。</p>
+<p>其次，对于扩展，可以从两个方面看：</p>
+<ul>
+<li>保持资源不变，增加负载会如何</li>
+<li>保持性能不变，增加多少资源才能满足增加负载的需求</li>
+</ul>
+<h2 id="应付扩展"><a href="#应付扩展" class="headerlink" title="应付扩展"></a>应付扩展</h2><ul>
+<li>垂直扩容：升级机器性能</li>
+<li>水平扩容：增加更加多的机器（可以利用廉价机器）</li>
+</ul>
+<p>有状态服务一般会优先考虑垂直扩容，直到实在无法满足需求才考虑水平扩容；而分布式或者无服务的服务，水平扩容十分合适。但实际中，还是service speicified。</p>
+<blockquote>
+<p>例如，即使两个系统的数据吞吐量折算下来是一样的，但是为每秒处理1000,000次请求(每个大小为KB)而设计的系统，与每分钟3个请求（每个大小2GB ）设计的系统会大不相同。</p>
+</blockquote>
+<p>而且系统需求本身也是难以在一开始就被定义好的，整个service生命周期可能会发生变动或者其他情况。因此，快速迭代是一种增加扩展型的办法。</p>
+<h2 id="可维护性"><a href="#可维护性" class="headerlink" title="可维护性"></a>可维护性</h2><p>维护他人留下的系统往往是令人不快的。换个角度，在设计之时就可以特别关注设计的三个原则：</p>
+<ul>
+<li>可运维性：方便运营团队来保持系统稳定<ul>
+<li>监控</li>
+<li>自动化</li>
+<li>排除单点热点</li>
+<li>良好的文档和易于理解的操作模式</li>
+<li>良好的默认设置</li>
+<li>尝试自我修复</li>
+<li>log，方便回顾</li>
+</ul>
+</li>
+<li>简单性：简化系统设计，方便工程师理解系统<ul>
+<li>使用通用”语言”，比如SQL，而不是新发明</li>
+<li>定义好好的抽象，通用语言其实也是一种抽象</li>
+</ul>
+</li>
+<li>可演化性：后续工程师能轻松进行改进来满足需求变更，或者说能够快速演化，这需要好的抽象等等</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+  </div>
+
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
     }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
 </script>
-    <!-- CDN failover -->
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
-    <script type="text/javascript">
-        if (typeof window.$ === 'undefined')
-        {
-            console.warn('jquery load from jsdelivr failed, will load local script')
-            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
-        }
-    </script>
-    <script src="/scripts/main.js"></script>
-    <!-- algolia -->
-    
-    <!-- busuanzi  -->
-    
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    
-    <!-- CNZZ  -->
-    
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Leo Zhou</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
     </div>
-    <!-- async load share.js -->
-     
-    <script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {
-            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
-            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-            processEscapes: true
-        }
-    });
-    MathJax.Hub.Queue(function() {
-        var all = MathJax.Hub.getAllJax();
-        for (var i = 0; i < all.length; ++i)
-            all[i].SourceElement().parentNode.className += ' has-jax';
-    });
-</script>
-<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Zhou</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
 </body>
 </html>
-
-
