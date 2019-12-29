@@ -48,24 +48,24 @@
 
   <meta property="og:type" content="website">
 <meta property="og:title" content="梅子黄时雨">
-<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;tags&#x2F;Linux&#x2F;index.html">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;page&#x2F;2&#x2F;index.html">
 <meta property="og:site_name" content="梅子黄时雨">
 <meta property="og:locale" content="en">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://yoursite.com/tags/Linux/">
+<link rel="canonical" href="http://yoursite.com/page/2/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome: false,
+    isHome: true,
     isPost: false
   };
 </script>
 
-  <title>Tag: Linux | 梅子黄时雨</title>
+  <title>梅子黄时雨</title>
   
 
 
@@ -159,49 +159,156 @@
           <div class="content">
             
 
+  <div class="posts-expand">
+        
   
   
-  
-  <div class="post-block">
-    <div class="posts-collapse">
-      <div class="collection-title">
-        <h1 class="collection-header">Linux
-          <small>Tag</small>
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/12/wild-pig-chapter1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/11/12/wild-pig-chapter1/" class="post-title-link" itemprop="url">野猪书第一章读书笔记</a>
         </h1>
-      </div>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-11-12 23:02:48" itemprop="dateCreated datePublished" datetime="2019-11-12T23:02:48+08:00">2019-11-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-16 23:09:50" itemprop="dateModified" datetime="2019-12-16T23:09:50+08:00">2019-12-16</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
-    <div class="collection-year">
-      <h1 class="collection-header">2019</h1>
+          <h2 id="数据密集型应用系统"><a href="#数据密集型应用系统" class="headerlink" title="数据密集型应用系统"></a>数据密集型应用系统</h2><ul>
+<li>数据库</li>
+<li>高速缓存</li>
+<li>索引</li>
+<li>流式处理</li>
+<li>批处理</li>
+</ul>
+<p>这里比较有意思的是索引，一般而言，索引不会单独领出来说，往往集成在数据库中。但实际上索引也许可以单独作为一个组件存在。而这些组件往往也不是独立存在，比如Es就包含了前三部分。</p>
+<p>另外，现在的数据体系中，不会是单独一个组件而存在，而是多个组件或者说上述所有组件的共同合作结果。</p>
+<p>比如一个响应用户请求的系统：</p>
+<ul>
+<li>需要一个高速缓存来快速响应某些通用请求</li>
+<li>需要一个数据库来存储所有的信息</li>
+<li>需要一个全文索引来方便查找</li>
+<li>需要一个消息队列来处理异步任务</li>
+</ul>
+<h2 id="三个系统设计关键问题"><a href="#三个系统设计关键问题" class="headerlink" title="三个系统设计关键问题"></a>三个系统设计关键问题</h2><ul>
+<li>可靠性<ul>
+<li>提供客户需要的功能</li>
+<li>容忍客户错误或者不正确的操作</li>
+<li>足够强的性能</li>
+<li>足够强的安全性</li>
+</ul>
+</li>
+<li>可扩展性</li>
+<li>可维护性</li>
+</ul>
+<h2 id="可靠性"><a href="#可靠性" class="headerlink" title="可靠性"></a>可靠性</h2><p>首先需要注意的是，可靠性并不意味着我们需要对所有可能发生的故障或者意外事件都要进行处理。追求无穷的可靠性，意味着无穷的成本。</p>
+<p>因此，可靠性或者说容错是有针对性的，或者说有范围的。</p>
+<p>MTTF：平均无故障事件</p>
+<p>错误类型：</p>
+<ul>
+<li>硬件错误：一般而言可以通过硬件冗余进行处理</li>
+<li>软件错误：相对难有快速解决方案，只能通过经验或者监控来缓解</li>
+<li>人为失误：比如配置错误<ul>
+<li>精心设计API</li>
+<li>沙盒或者dry run</li>
+<li>充分测试</li>
+<li>亡羊补牢，这需要快速回滚等支持</li>
+<li>监控</li>
+</ul>
+</li>
+</ul>
+<h2 id="可扩展性"><a href="#可扩展性" class="headerlink" title="可扩展性"></a>可扩展性</h2><p>首先的问题是如何描述性能，一般而言关心吞吐量(throughput)，也就是从server角度来看，单位时间内能够处理请求的数目。吞吐量和latency是相关的，throughput = 1 / latency。</p>
+<p>另外一个角度是从客户角度来看，也就是响应时间（response time），从客户发送请求，到返回结果的间隔。</p>
+<p>这些描述，一般而言可以从统计学的角度来看，也就是平均数，中位数， 95%（比95%的请求都要高），99%甚至99.99%。这些统计信息往往和服务质量目标（Service Level Objective）或者服务质量协议(Service Level Agreements)绑定在一起。</p>
+<p>其次，对于扩展，可以从两个方面看：</p>
+<ul>
+<li>保持资源不变，增加负载会如何</li>
+<li>保持性能不变，增加多少资源才能满足增加负载的需求</li>
+</ul>
+<h2 id="应付扩展"><a href="#应付扩展" class="headerlink" title="应付扩展"></a>应付扩展</h2><ul>
+<li>垂直扩容：升级机器性能</li>
+<li>水平扩容：增加更加多的机器（可以利用廉价机器）</li>
+</ul>
+<p>有状态服务一般会优先考虑垂直扩容，直到实在无法满足需求才考虑水平扩容；而分布式或者无服务的服务，水平扩容十分合适。但实际中，还是service speicified。</p>
+<blockquote>
+<p>例如，即使两个系统的数据吞吐量折算下来是一样的，但是为每秒处理1000,000次请求(每个大小为KB)而设计的系统，与每分钟3个请求（每个大小2GB ）设计的系统会大不相同。</p>
+</blockquote>
+<p>而且系统需求本身也是难以在一开始就被定义好的，整个service生命周期可能会发生变动或者其他情况。因此，快速迭代是一种增加扩展型的办法。</p>
+<h2 id="可维护性"><a href="#可维护性" class="headerlink" title="可维护性"></a>可维护性</h2><p>维护他人留下的系统往往是令人不快的。换个角度，在设计之时就可以特别关注设计的三个原则：</p>
+<ul>
+<li>可运维性：方便运营团队来保持系统稳定<ul>
+<li>监控</li>
+<li>自动化</li>
+<li>排除单点热点</li>
+<li>良好的文档和易于理解的操作模式</li>
+<li>良好的默认设置</li>
+<li>尝试自我修复</li>
+<li>log，方便回顾</li>
+</ul>
+</li>
+<li>简单性：简化系统设计，方便工程师理解系统<ul>
+<li>使用通用”语言”，比如SQL，而不是新发明</li>
+<li>定义好好的抽象，通用语言其实也是一种抽象</li>
+</ul>
+</li>
+<li>可演化性：后续工程师能轻松进行改进来满足需求变更，或者说能够快速演化，这需要好的抽象等等</li>
+</ul>
+
+      
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2019-12-05T22:49:18+08:00"
-              content="2019-12-05">
-          12-05
-        </time>
-      </div>
-
-      <h2 class="post-title">
-          <a class="post-title-link" href="/2019/12/05/Linux-Interrupt-Part-1/" itemprop="url">
-            <span itemprop="name">Linux Interrupt Part 1</span>
-          </a>
-      </h2>
-
-    </header>
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
   </article>
+  
+  
+  
 
-    </div>
   </div>
-  
-  
-  
 
   
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+  </nav>
 
 
 

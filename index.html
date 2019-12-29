@@ -164,6 +164,167 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/29/SSA-Construction-and-Destruction-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2019/12/29/SSA-Construction-and-Destruction-1/" class="post-title-link" itemprop="url">SSA Construction and Destruction(1)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2019-12-29 15:30:22 / Modified: 15:31:08" itemprop="dateCreated datePublished" datetime="2019-12-29T15:30:22+08:00">2019-12-29</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-SSA-Construction"><a href="#1-SSA-Construction" class="headerlink" title="1. SSA Construction"></a>1. SSA Construction</h1><h2 id="1-1-CFG-to-SSA-Valid-Transformation"><a href="#1-1-CFG-to-SSA-Valid-Transformation" class="headerlink" title="1.1. CFG to SSA Valid Transformation"></a>1.1. CFG to SSA Valid Transformation</h2><p>Two conditions should be satisfied:</p>
+<ol>
+<li>Correctness of form: Each variable mentioned in the transformed program must have exactly one definition.  </li>
+<li>Semantic invariance: two coressponding paths in CFG and SSA should lead to same value for each variables at end.</li>
+</ol>
+<h2 id="1-2-Dominance-Frontier"><a href="#1-2-Dominance-Frontier" class="headerlink" title="1.2. Dominance Frontier"></a>1.2. Dominance Frontier</h2><ul>
+<li>dominate: n &gt;= m, if every path to m pass n</li>
+<li>strict dominate: n &gt;= m and n != m</li>
+<li>immediate dominator: n strict dominate m and n is the closet node of so -&gt; idom(m) = n</li>
+</ul>
+<p>Dominance Frontiers of node n are nodes m satisfy:</p>
+<ul>
+<li>m is not strict dominated by n</li>
+<li>exist one m pre-node p which is dominated by n</li>
+</ul>
+<p>we define : df(n) = { m };</p>
+<p>Interesting things here:</p>
+<ul>
+<li>m may be idom(n)</li>
+<li>n may be in df(n)</li>
+</ul>
+<p>Consider the second case: </p>
+<p>If n is in df(n), then: </p>
+<ul>
+<li>there should be one cycle from n to n. It also means there’s one path from root to n which pass n intermediately</li>
+<li>and there must be one path from root n which does not contains n inside</li>
+<li>in such case, there are at least two paths reach n, leading to requirments of phi-function</li>
+</ul>
+<p>Normaly you may find such n in df(n) at loop header.</p>
+<h3 id="1-2-1-Calculate-Dominace-Frontier"><a href="#1-2-1-Calculate-Dominace-Frontier" class="headerlink" title="1.2.1. Calculate Dominace Frontier"></a>1.2.1. Calculate Dominace Frontier</h3><p>Simple but ineffcient way to calculate df is check every node m of n ( n &gt;= m), test all its successor if it is dominated by n.</p>
+<p>However, as a matter of fact, nodes each other contains relationship. Some information may reuse. We focus on dominate information.</p>
+<h4 id="1-2-1-1-Consititue-of-DF-n"><a href="#1-2-1-1-Consititue-of-DF-n" class="headerlink" title="1.2.1.1 Consititue of DF(n)"></a>1.2.1.1 Consititue of DF(n)</h4><p>First prove: If p is in df(n), then p must at least exists in </p>
+<ul>
+<li>one of df(m) where idom(m) = n</li>
+<li>group of successor(n)</li>
+</ul>
+<p>suppose p is in df(n), but neither in successor(n), nor in any of df(m) where idom(m) = n</p>
+<ul>
+<li>n is not strict dominate p, n !&gt; p</li>
+<li>one precessor m’ of p is dominate by n, n &gt;= m’</li>
+<li>idom(m’) != n since p is in df(m’)</li>
+</ul>
+<p>in such case</p>
+<ul>
+<li>there must one m (idom(m) = n) dominate m’, we name one of them as m+</li>
+<li>m+ must not dominate p, otherwise since n &gt; m+, leading to n &gt; p</li>
+</ul>
+<p>then we get p is in df(m+) which is conflict.</p>
+<p>However, on the other hand, not all nodes in up 2 kinds are in df(n), we need to remove those nodes x dominated by n and prove remaining nodes are really in df(n)</p>
+<p>Those nodes dominated by n should be obviously removed; For remaining nodes since it is successor node is n(n &gt;= n) or one of its successor node k &lt;= m, plusing n &gt; m, then n &gt; k. Thoese remaining nodes should be in df(n).</p>
+<p>As conclusions, we named two kinds of df(n) nodes as:</p>
+<ul>
+<li>df_base(n) = { m succ(n) | n !&gt; m }</li>
+<li>df_ind(n) = { p in df(m) | idom(m) = n, n !&gt; p} </li>
+</ul>
+<h4 id="1-2-1-2-Simplfy-Checking-Process"><a href="#1-2-1-2-Simplfy-Checking-Process" class="headerlink" title="1.2.1.2 Simplfy Checking Process"></a>1.2.1.2 Simplfy Checking Process</h4><p>We may use idom(p) to check if n dominates the p in up process. It helps to reduce the complexity of exclusive process.</p>
+<p>We could approve, for df_base and df_ind, restriction <code>n !&gt; m</code> is equal to <code>idom(m) != n</code>. However, for df_base, <code>n !&gt; m</code> -&gt; <code>idom(m) != n</code> is obvious, since m is just successor of n.</p>
+<p>Let us focus on df_ind. Given :</p>
+<ul>
+<li>p is in df(m) where idom(m) = n<ul>
+<li>one prec(p), named sp, m &gt;= sp</li>
+<li>m !&gt; p</li>
+<li>m could reach p</li>
+</ul>
+</li>
+<li>n &gt;= p</li>
+</ul>
+<p>In such case, if idom(p) != n, let idom(p) = x, then x !&gt; m, since idom(m) = n, otherwise, idom(m) will be x. And slo m !&gt; x, otherwise m will dominate p. So, there will be two path from n to p, one pass m and one pass x, it will be conflict with x &gt; p prerequisite.</p>
+<p>Here we could get <code>n !&gt; m</code> -&gt; <code>idom(m) != n</code> is also true for base_ind. Then we could simple the df(n) as calculte:</p>
+<ul>
+<li>df_base(n) = { m succ(n) | idom(m) != n }</li>
+<li>df_ind(n) = { p in df(m) | idom(m) = n, idom(p) != n} </li>
+</ul>
+<p>idom(m) is easy to calculate in one dominate tree and we could rely on one bottomup traversal of the dominator tree to build up all df(n) for each onde:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">void calDF(DominateTree tree, Map&lt;DominateNode, DF&gt; output) &#123;</span><br><span class="line">    Queue&lt;DominateNode&gt; queue;</span><br><span class="line">    </span><br><span class="line">    queue.push(tree.root);</span><br><span class="line">    </span><br><span class="line">    while (!queue.isEmpty()) &#123;</span><br><span class="line">        DominateNode n = queue.pop();</span><br><span class="line">        </span><br><span class="line">        if (!n.visited() &amp;&amp; n.hasChild()) &#123;</span><br><span class="line">            queue.pushAll(n.children());</span><br><span class="line">            n.visit();</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            // handle node, you can get calculated DF from output</span><br><span class="line">            calculateDF(node, output);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">void calculateDF(DominateNode node, Map&lt;DominateNode, DF&gt; output) &#123;</span><br><span class="line">    DF df;</span><br><span class="line">    for (DominateNode sn : node.successors()) &#123;</span><br><span class="line">        if (sn.idom() != n) &#123;</span><br><span class="line">          df.add(sn);  </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    for (DominateNode dn : node.children()) &#123;</span><br><span class="line">        // since visit from bottom, must be calculated</span><br><span class="line">        DF cdf = output.get(dn);</span><br><span class="line">        for (DominateNode cdfn : cdf) &#123;</span><br><span class="line">            if (cdfn.idom() != n) &#123;</span><br><span class="line">                df.add(cdfn)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    output.put(node, df);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="1-3-Placement-of-phi-instructions"><a href="#1-3-Placement-of-phi-instructions" class="headerlink" title="1.3. Placement of phi-instructions"></a>1.3. Placement of phi-instructions</h2><p>Choose one conservative solution: for one variable x, we place phi-instruction for it in each node of df(n) where n contains assignment of x or it has been inserted one phi-function of x.(Since phi-function itself is also one assignment of x)</p>
+<p>The whole process then is very easy, for each varialbe x:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Queue workList;</span><br><span class="line"></span><br><span class="line">// put all nodes contains assignment of x</span><br><span class="line">for (Node n : cfg.selectNodesWithAssignment(x)) &#123;</span><br><span class="line">    workList.push(n)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">while (!workList.isEmpty()) &#123;</span><br><span class="line">    Node n = workList.pop();</span><br><span class="line">    </span><br><span class="line">    // put phi-function in each node in df(n)</span><br><span class="line">    // and put these node into workList</span><br><span class="line">    for (Node dfn : n.df()) &#123;</span><br><span class="line">        if (!dfn.isVisited()) &#123;</span><br><span class="line">            dfn.insertPhi(x);</span><br><span class="line">            workList.push(dfn)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="1-4-Renaming-of-Variables"><a href="#1-4-Renaming-of-Variables" class="headerlink" title="1.4. Renaming of Variables"></a>1.4. Renaming of Variables</h2><p>Here we need to take care 4 kinds of usage of one variable x:</p>
+<ul>
+<li>l-value(左值) in assignment</li>
+<li>r-value(右值) in assignment</li>
+<li>l-value(左值) in phi-function</li>
+<li>r-value(右值) in phi-function</li>
+</ul>
+<p>We will do one BFS in the tree with one stack to record context of one variable and one counter to record current version. l-value always brings one new version of variable (counter ++) and push itself into stack to update context.</p>
+<p>For r-value in assignment, just use current variable version in context; However, in phi-function we need to pick up which version shoul based on position.</p>
+<p>Another problem is when should we update the phi-function r-value: we only update phi-function r-value when it is one node’s successor. In such case, we could know path index of the node.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// start with markNode(root)</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">markNode</span><span class="params">(Node node)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// we could just save parent context here</span></span><br><span class="line">    saveParentContext();</span><br><span class="line">    </span><br><span class="line">    foreach(Assignment as : node.instrs()) &#123;</span><br><span class="line">        <span class="comment">// assign version for assignment</span></span><br><span class="line">        renameWithContextAndIncCounter(as.lVariable);</span><br><span class="line">        renameWithContext(as.rVariables());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// update phi-function in succeesor node</span></span><br><span class="line">    foreach(Node sucNode: node.succs()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (sucNode.containsPhi()) &#123;</span><br><span class="line">            <span class="comment">// calculate index and update related node version</span></span><br><span class="line">            updatePhiRValue(node, sucNode)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// call childrens</span></span><br><span class="line">    foreach(Node child: node.children()) &#123;</span><br><span class="line">        markNode(child);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// pop stack back to restore envionment to parent status</span></span><br><span class="line">    restoreParentContext();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="1-5-Proof-Correctness"><a href="#1-5-Proof-Correctness" class="headerlink" title="1.5. Proof Correctness"></a>1.5. Proof Correctness</h2><p>First define some notation:</p>
+<ul>
+<li>df(S) = union of all df(s) for all s in S</li>
+<li>df+(S) = limit df(df(S’)) + df(S’), until no more change</li>
+<li>join(S)={n | ∃ converging paths m -&gt; n and k -&gt; n, m,k ∈ S}</li>
+<li>join+(S) limit join(join(S’)) + join(S’), until no more change</li>
+</ul>
+<p>Let S be nodes containing assignments of varaible x. We need to approve: for each node in join+(S), there must be one phi-function in df+(S).</p>
+<p>And also, we need prove, after ‘placement of phi-function’ &amp; ‘Renmaing Variable’, the output is SSA and with following property:</p>
+<ul>
+<li>convential</li>
+<li>minimal </li>
+<li>no-pruned </li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/16/Compile-LLVM-Clang-Windows/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1890,152 +2051,12 @@ H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保�
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/12/wild-pig-chapter1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Leo Zhou">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="梅子黄时雨">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2019/11/12/wild-pig-chapter1/" class="post-title-link" itemprop="url">野猪书第一章读书笔记</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-11-12 23:02:48" itemprop="dateCreated datePublished" datetime="2019-11-12T23:02:48+08:00">2019-11-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2019-12-16 23:09:50" itemprop="dateModified" datetime="2019-12-16T23:09:50+08:00">2019-12-16</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="数据密集型应用系统"><a href="#数据密集型应用系统" class="headerlink" title="数据密集型应用系统"></a>数据密集型应用系统</h2><ul>
-<li>数据库</li>
-<li>高速缓存</li>
-<li>索引</li>
-<li>流式处理</li>
-<li>批处理</li>
-</ul>
-<p>这里比较有意思的是索引，一般而言，索引不会单独领出来说，往往集成在数据库中。但实际上索引也许可以单独作为一个组件存在。而这些组件往往也不是独立存在，比如Es就包含了前三部分。</p>
-<p>另外，现在的数据体系中，不会是单独一个组件而存在，而是多个组件或者说上述所有组件的共同合作结果。</p>
-<p>比如一个响应用户请求的系统：</p>
-<ul>
-<li>需要一个高速缓存来快速响应某些通用请求</li>
-<li>需要一个数据库来存储所有的信息</li>
-<li>需要一个全文索引来方便查找</li>
-<li>需要一个消息队列来处理异步任务</li>
-</ul>
-<h2 id="三个系统设计关键问题"><a href="#三个系统设计关键问题" class="headerlink" title="三个系统设计关键问题"></a>三个系统设计关键问题</h2><ul>
-<li>可靠性<ul>
-<li>提供客户需要的功能</li>
-<li>容忍客户错误或者不正确的操作</li>
-<li>足够强的性能</li>
-<li>足够强的安全性</li>
-</ul>
-</li>
-<li>可扩展性</li>
-<li>可维护性</li>
-</ul>
-<h2 id="可靠性"><a href="#可靠性" class="headerlink" title="可靠性"></a>可靠性</h2><p>首先需要注意的是，可靠性并不意味着我们需要对所有可能发生的故障或者意外事件都要进行处理。追求无穷的可靠性，意味着无穷的成本。</p>
-<p>因此，可靠性或者说容错是有针对性的，或者说有范围的。</p>
-<p>MTTF：平均无故障事件</p>
-<p>错误类型：</p>
-<ul>
-<li>硬件错误：一般而言可以通过硬件冗余进行处理</li>
-<li>软件错误：相对难有快速解决方案，只能通过经验或者监控来缓解</li>
-<li>人为失误：比如配置错误<ul>
-<li>精心设计API</li>
-<li>沙盒或者dry run</li>
-<li>充分测试</li>
-<li>亡羊补牢，这需要快速回滚等支持</li>
-<li>监控</li>
-</ul>
-</li>
-</ul>
-<h2 id="可扩展性"><a href="#可扩展性" class="headerlink" title="可扩展性"></a>可扩展性</h2><p>首先的问题是如何描述性能，一般而言关心吞吐量(throughput)，也就是从server角度来看，单位时间内能够处理请求的数目。吞吐量和latency是相关的，throughput = 1 / latency。</p>
-<p>另外一个角度是从客户角度来看，也就是响应时间（response time），从客户发送请求，到返回结果的间隔。</p>
-<p>这些描述，一般而言可以从统计学的角度来看，也就是平均数，中位数， 95%（比95%的请求都要高），99%甚至99.99%。这些统计信息往往和服务质量目标（Service Level Objective）或者服务质量协议(Service Level Agreements)绑定在一起。</p>
-<p>其次，对于扩展，可以从两个方面看：</p>
-<ul>
-<li>保持资源不变，增加负载会如何</li>
-<li>保持性能不变，增加多少资源才能满足增加负载的需求</li>
-</ul>
-<h2 id="应付扩展"><a href="#应付扩展" class="headerlink" title="应付扩展"></a>应付扩展</h2><ul>
-<li>垂直扩容：升级机器性能</li>
-<li>水平扩容：增加更加多的机器（可以利用廉价机器）</li>
-</ul>
-<p>有状态服务一般会优先考虑垂直扩容，直到实在无法满足需求才考虑水平扩容；而分布式或者无服务的服务，水平扩容十分合适。但实际中，还是service speicified。</p>
-<blockquote>
-<p>例如，即使两个系统的数据吞吐量折算下来是一样的，但是为每秒处理1000,000次请求(每个大小为KB)而设计的系统，与每分钟3个请求（每个大小2GB ）设计的系统会大不相同。</p>
-</blockquote>
-<p>而且系统需求本身也是难以在一开始就被定义好的，整个service生命周期可能会发生变动或者其他情况。因此，快速迭代是一种增加扩展型的办法。</p>
-<h2 id="可维护性"><a href="#可维护性" class="headerlink" title="可维护性"></a>可维护性</h2><p>维护他人留下的系统往往是令人不快的。换个角度，在设计之时就可以特别关注设计的三个原则：</p>
-<ul>
-<li>可运维性：方便运营团队来保持系统稳定<ul>
-<li>监控</li>
-<li>自动化</li>
-<li>排除单点热点</li>
-<li>良好的文档和易于理解的操作模式</li>
-<li>良好的默认设置</li>
-<li>尝试自我修复</li>
-<li>log，方便回顾</li>
-</ul>
-</li>
-<li>简单性：简化系统设计，方便工程师理解系统<ul>
-<li>使用通用”语言”，比如SQL，而不是新发明</li>
-<li>定义好好的抽象，通用语言其实也是一种抽象</li>
-</ul>
-</li>
-<li>可演化性：后续工程师能轻松进行改进来满足需求变更，或者说能够快速演化，这需要好的抽象等等</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+  </nav>
 
 
 
@@ -2100,12 +2121,12 @@ H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-count">11</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
