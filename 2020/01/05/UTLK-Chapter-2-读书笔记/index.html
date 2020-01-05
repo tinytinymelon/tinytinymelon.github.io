@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://yoursite.com').hostname,
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="0. Address Logical Address -&amp;gt; 段式 16bit Segment Selector 32bit Offset   Linear Address (Vitual Address) -&amp;gt; 页式 Physical Address  1. 分段一个段的描述会被分成两块：  Segment Selector: 类似reference id，16bit长度，用于描述 一">
+<meta name="keywords" content="Linux,Kernel,Memory">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UTLK Chapter 2 读书笔记">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;01&#x2F;05&#x2F;UTLK-Chapter-2-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0&#x2F;index.html">
+<meta property="og:site_name" content="梅子黄时雨">
+<meta property="og:description" content="0. Address Logical Address -&amp;gt; 段式 16bit Segment Selector 32bit Offset   Linear Address (Vitual Address) -&amp;gt; 页式 Physical Address  1. 分段一个段的描述会被分成两块：  Segment Selector: 类似reference id，16bit长度，用于描述 一">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-01-05T07:55:47.348Z">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/01/05/UTLK-Chapter-2-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>UTLK Chapter 2 读书笔记 | 梅子黄时雨</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">梅子黄时雨</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/05/UTLK-Chapter-2-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          UTLK Chapter 2 读书笔记
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2020-01-05 15:54:45 / Modified: 15:55:47" itemprop="dateCreated datePublished" datetime="2020-01-05T15:54:45+08:00">2020-01-05</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="0-Address"><a href="#0-Address" class="headerlink" title="0. Address"></a>0. Address</h1><ul>
+<li>Logical Address -&gt; 段式<ul>
+<li>16bit Segment Selector</li>
+<li>32bit Offset</li>
+</ul>
+</li>
+<li>Linear Address (Vitual Address) -&gt; 页式</li>
+<li>Physical Address</li>
+</ul>
+<h1 id="1-分段"><a href="#1-分段" class="headerlink" title="1. 分段"></a>1. 分段</h1><p>一个段的描述会被分成两块：</p>
+<ul>
+<li>Segment Selector: 类似reference id，16bit长度，用于描述<ul>
+<li>一个Segment的index</li>
+<li>TI(Table Indicator): 描述Segment是在GDT还是LDT</li>
+<li>RPL(Requestor Privilege Level)</li>
+</ul>
+</li>
+<li>Segment Descriptor: 描述Segment本身的信息，64bit，会有不同的类型：<ul>
+<li>Code Segment Descriptor</li>
+<li>Data Segment Descriptor</li>
+<li>Task State Segment Descriptor (TSSD)</li>
+<li>Local Descriptor Table Descriptor (LDTD)</li>
+</ul>
+</li>
+</ul>
+<p>为了加速代码执行，x86本身会提供额外的寄存器来保存Segment Selector：cs,ss,ds。</p>
+<h1 id="2-Segment-in-Linux"><a href="#2-Segment-in-Linux" class="headerlink" title="2. Segment in Linux"></a>2. Segment in Linux</h1><h2 id="2-1-GDT"><a href="#2-1-GDT" class="headerlink" title="2.1. GDT"></a>2.1. GDT</h2><p>每一个CPU core都会有自己的GDT，并且大部分情况下，都是一样的内容。Linux kernel使用的GDT长度为32 slots。</p>
+<h3 id="2-1-1-version-linux-2-6-13"><a href="#2-1-1-version-linux-2-6-13" class="headerlink" title="2.1.1. version linux 2.6.13"></a>2.1.1. version linux 2.6.13</h3><p>linux 2.6.13中(UTLK中的版本)，x86的GDT定义很直接(arch/i386/kernel/head.S)：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * The boot_gdt_table must mirror the equivalent in setup.S and is</span><br><span class="line"> * used only for booting.</span><br><span class="line"> */</span><br><span class="line">	.align L1_CACHE_BYTES</span><br><span class="line">ENTRY(boot_gdt_table)</span><br><span class="line">	.fill GDT_ENTRY_BOOT_CS,8,0</span><br><span class="line">	.quad 0x00cf9a000000ffff	/* kernel 4GB code at 0x00000000 */</span><br><span class="line">	.quad 0x00cf92000000ffff	/* kernel 4GB data at 0x00000000 */</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * The Global Descriptor Table contains 28 quadwords, per-CPU.</span><br><span class="line"> */</span><br><span class="line">	.align PAGE_SIZE_asm</span><br><span class="line">ENTRY(cpu_gdt_table)</span><br><span class="line">	.quad 0x0000000000000000	/* NULL descriptor */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x0b reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x13 reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x1b reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x20 unused */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x28 unused */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x33 TLS entry 1 */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x3b TLS entry 2 */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x43 TLS entry 3 */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x4b reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x53 reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x5b reserved */</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>可以看到这里有两个gdt，一个是用于boot时候的<code>boot_gdt_table</code>；一个用于平时使用<code>cpu_gdt_table</code>。而这里的32个slot可以直接通过数得到。（笑）</p>
+<h3 id="2-1-2-Late-Version"><a href="#2-1-2-Late-Version" class="headerlink" title="2.1.2. Late Version"></a>2.1.2. Late Version</h3><p>在2.6.13之后的版本(至少在2.6.39及之后)，GDT的定义被转移到了<code>arch/x86/kernel/cpu/common.c</code>中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">DEFINE_PER_CPU_PAGE_ALIGNED(struct gdt_page, gdt_page) = &#123; .gdt = &#123;</span><br><span class="line">#ifdef CONFIG_X86_64</span><br><span class="line">	[GDT_ENTRY_KERNEL32_CS]		= GDT_ENTRY_INIT(0xc09b, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(0xa09b, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(0xc093, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER32_CS]	= GDT_ENTRY_INIT(0xc0fb, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(0xc0f3, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(0xa0fb, 0, 0xfffff),</span><br><span class="line">#else</span><br><span class="line">	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(0xc09a, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(0xc092, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(0xc0fa, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(0xc0f2, 0, 0xfffff),</span><br></pre></td></tr></table></figure>
+<p>其中的定义4.13之前：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#define GDT_ENTRY_INIT(flags, base, limit) &#123; &#123; &#123; \</span><br><span class="line">		.a = ((limit) &amp; 0xffff) | (((base) &amp; 0xffff) &lt;&lt; 16), \</span><br><span class="line">		.b = (((base) &amp; 0xff0000) &gt;&gt; 16) | (((flags) &amp; 0xf0ff) &lt;&lt; 8) | \</span><br><span class="line">			((limit) &amp; 0xf0000) | ((base) &amp; 0xff000000), \</span><br><span class="line">	&#125; &#125; &#125;</span><br></pre></td></tr></table></figure>
+<p>4.13之后：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">#define GDT_ENTRY_INIT(flags, base, limit)			\</span><br><span class="line">	&#123;							\</span><br><span class="line">		.limit0		= (u16) (limit),		\</span><br><span class="line">		.limit1		= ((limit) &gt;&gt; 16) &amp; 0x0F,	\</span><br><span class="line">		.base0		= (u16) (base),			\</span><br><span class="line">		.base1		= ((base) &gt;&gt; 16) &amp; 0xFF,	\</span><br><span class="line">		.base2		= ((base) &gt;&gt; 24) &amp; 0xFF,	\</span><br><span class="line">		.type		= (flags &amp; 0x0f),		\</span><br><span class="line">		.s		= (flags &gt;&gt; 4) &amp; 0x01,		\</span><br><span class="line">		.dpl		= (flags &gt;&gt; 5) &amp; 0x03,		\</span><br><span class="line">		.p		= (flags &gt;&gt; 7) &amp; 0x01,		\</span><br><span class="line">		.avl		= (flags &gt;&gt; 12) &amp; 0x01,		\</span><br><span class="line">		.l		= (flags &gt;&gt; 13) &amp; 0x01,		\</span><br><span class="line">		.d		= (flags &gt;&gt; 14) &amp; 0x01,		\</span><br><span class="line">		.g		= (flags &gt;&gt; 15) &amp; 0x01,		\</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>其中32 slots定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">gdt_page</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">desc_struct</span> <span class="title">gdt</span>[<span class="title">GDT_ENTRIES</span>];</span></span><br><span class="line">&#125; __attribute__((aligned(PAGE_SIZE)));</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Number of entries in the GDT table:</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_ENTRIES			16</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_SIZE			(GDT_ENTRIES*8)</span></span><br></pre></td></tr></table></figure>
+<p>同时可以看到每一个slot的长度是64bit，8bytes。</p>
+<h2 id="2-2-LDT"><a href="#2-2-LDT" class="headerlink" title="2.2. LDT"></a>2.2. LDT</h2><p>LDT在默认情况下，每一个core也只有一个，对应的descriptor分配在gdt固定的位置上。slots个数为8192，单个slot长度为8 bytes，这些定义在2.6.13后的linux版本中保持一致：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/* Maximum number of LDT entries supported. */</span><br><span class="line">#define LDT_ENTRIES	8192</span><br><span class="line">/* The size of each LDT entry. */</span><br><span class="line">#define LDT_ENTRY_SIZE	8</span><br></pre></td></tr></table></figure>
+<h2 id="2-3-Kernel-amp-User-Segment"><a href="#2-3-Kernel-amp-User-Segment" class="headerlink" title="2.3. Kernel &amp; User Segment"></a>2.3. Kernel &amp; User Segment</h2><p>对于指令和数据段，Linux只是简单的使用了x86的段结构，包括：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// --------- sgement.h</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * Segment selector values corresponding to the above entries:</span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">#define __KERNEL_CS			(GDT_ENTRY_KERNEL_CS*8)</span><br><span class="line">#define __KERNEL_DS			(GDT_ENTRY_KERNEL_DS*8)</span><br><span class="line">#define __USER_DS			(GDT_ENTRY_DEFAULT_USER_DS*8 + 3)</span><br><span class="line">#define __USER_CS			(GDT_ENTRY_DEFAULT_USER_CS*8 + 3)</span><br><span class="line">#define __ESPFIX_SS			(GDT_ENTRY_ESPFIX_SS*8)</span><br></pre></td></tr></table></figure>
+<p>其中后续的都是gdt的index：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#define GDT_ENTRY_KERNEL_CS		12</span><br><span class="line">#define GDT_ENTRY_KERNEL_DS		13</span><br><span class="line">#define GDT_ENTRY_DEFAULT_USER_CS	14</span><br><span class="line">#define GDT_ENTRY_DEFAULT_USER_DS	15</span><br><span class="line">...</span><br><span class="line">#define GDT_ENTRY_ESPFIX_SS		26</span><br></pre></td></tr></table></figure>
+<h1 id="2-分页"><a href="#2-分页" class="headerlink" title="2. 分页"></a>2. 分页</h1><p>64bit的x86_64的page size依然是4KB，但是包含4级页表：</p>
+<ul>
+<li>address size bits: 48</li>
+<li>linear address split: 9 + 9 + 9 + 9 + 12</li>
+</ul>
+<p>Linux的页表包括多层，最多4层：</p>
+<ul>
+<li>Page Global Directory -&gt; PGDIR_SHIFT</li>
+<li>Page Upper Directory -&gt; PUD_SHIFT = 30</li>
+<li>Page Middle Directory -&gt; PMD_SHIFT = 21</li>
+<li>Page Table -&gt;  PAGE_SHIFT = 12</li>
+</ul>
+<p>其实x86最多支持5层：<a href="https://software.intel.com/sites/default/files/managed/2b/80/5-level_paging_white_paper.pdf" target="_blank" rel="noopener">5-Level Paging and 5-Level EPT</a>。因此额外加入了一个P4D_SHIFT(Page 4th Directory)。linux因此也加入了新的patch: <a href="https://www.phoronix.com/scan.php?page=news_item&amp;px=Intel-5-Level-Paging" target="_blank" rel="noopener">Intel Working On 5-Level Paging To Increase Linux Virtual/Physical Address Space</a></p>
+<h2 id="2-1-x86分页"><a href="#2-1-x86分页" class="headerlink" title="2.1. x86分页"></a>2.1. x86分页</h2><p>x86代码中支持2，3，4层分页，分别在不同的文件中定义：</p>
+<ul>
+<li>arch/x86/include/asm/pgtable-2level_types.h</li>
+<li>arch/x86/include/asm/pgtable-3level_types.h</li>
+<li>arch/x86/include/asm/pgtable_32_types.h</li>
+<li>arch/x86/include/asm/pgtable_64_types.h</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">#ifdef CONFIG_X86_5LEVEL</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * PGDIR_SHIFT determines what a top-level page table entry can map</span><br><span class="line"> */</span><br><span class="line">#define PGDIR_SHIFT	pgdir_shift</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * 4th level page in 5-level paging case</span><br><span class="line"> */</span><br><span class="line">#define P4D_SHIFT		39</span><br><span class="line"></span><br><span class="line">#define MAX_POSSIBLE_PHYSMEM_BITS	52</span><br><span class="line"></span><br><span class="line">#else /* CONFIG_X86_5LEVEL */</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * PGDIR_SHIFT determines what a top-level page table entry can map</span><br><span class="line"> */</span><br><span class="line">#define pgdir_shift		39</span><br><span class="line"></span><br><span class="line">#endif /* CONFIG_X86_5LEVEL */</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * 3rd level page</span><br><span class="line"> */</span><br><span class="line">#define PUD_SHIFT	30</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * PMD_SHIFT determines the size of the area a middle-level</span><br><span class="line"> * page table can map</span><br><span class="line"> */</span><br><span class="line">#define PMD_SHIFT	21</span><br><span class="line"></span><br><span class="line">/* PAGE_SHIFT determines the page size */</span><br><span class="line">#define PAGE_SHIFT		12</span><br></pre></td></tr></table></figure>
+<p>注意这里的长度是page table的一个entry所指向的地址长度，而不是总的长度，所以这里也就看不到PTE表的SHIFT定义了。</p>
+<h2 id="2-2-ARM"><a href="#2-2-ARM" class="headerlink" title="2.2. ARM"></a>2.2. ARM</h2><p>ARM本身支持多种page size，linux使用了4KB，两级/三级页表：</p>
+<ul>
+<li>PGDIR_SHIFT -&gt; 21, 30</li>
+<li>PMD_SHIFT -&gt; 21, 21</li>
+<li>PAGE_SIZE -&gt; 12, 12</li>
+</ul>
+<p>有意思的是2级页表的情况下，第一级页表有2048 entry(2^11)，每个entry 8bytes，包括两个指针，每一个都指向一个二级页表；不过这两个页表在内存上市连续的(每一个叫一个section)，每一个都有256个entry，合起来就有2^9 = 512 entry。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#define PTRS_PER_PTE		512</span><br><span class="line">#define PTRS_PER_PMD		1</span><br><span class="line">#define PTRS_PER_PGD		2048</span><br><span class="line"></span><br><span class="line">#define SECTION_SHIFT		20</span><br><span class="line">#define SECTION_SIZE		(1UL &lt;&lt; SECTION_SHIFT)</span><br><span class="line">#define SECTION_MASK		(~(SECTION_SIZE-1))</span><br></pre></td></tr></table></figure>
+<p>ARM的三层页表是来支持huge page的。</p>
+<h2 id="2-3-ARM64"><a href="#2-3-ARM64" class="headerlink" title="2.3. ARM64"></a>2.3. ARM64</h2><p>ARM64支持最多4级页表和最大64KB page size。linux选择了：</p>
+<ul>
+<li>3 (39bits)or 4 (48bits)级页表 + 4KB page size</li>
+<li>2 (42bits)级页表 + 3 (52bits)级页表+ 64KB page size</li>
+</ul>
+<h2 id="2-4-RISC-V"><a href="#2-4-RISC-V" class="headerlink" title="2.4. RISC-V"></a>2.4. RISC-V</h2><p>RISC-V本身支持非常多的virtual memory page的layout，参考：</p>
+<ul>
+<li><a href="https://simonsungm.github.io/2019/10/20/RISC-V-Linux-Page-Table-I/" target="_blank" rel="noopener">RISC-V Linux Page Table I</a></li>
+<li><a href="https://riscv.org/specifications/privileged-isa/" target="_blank" rel="noopener">Privileged ISA Specification</a></li>
+</ul>
+<p>linux选择了：</p>
+<ul>
+<li>2级(22bits)页表 + 4KB page size</li>
+<li>三级页表(22bits, 30bits) + 4KB page size</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/Kernel/" rel="tag"># Kernel</a>
+              <a href="/tags/Memory/" rel="tag"># Memory</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/29/SSA-Construction-and-Destruction-1/" rel="prev" title="SSA Construction and Destruction(1)">
+      <i class="fa fa-chevron-left"></i> SSA Construction and Destruction(1)
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0-Address"><span class="nav-text">0. Address</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-分段"><span class="nav-text">1. 分段</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-Segment-in-Linux"><span class="nav-text">2. Segment in Linux</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-GDT"><span class="nav-text">2.1. GDT</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-1-version-linux-2-6-13"><span class="nav-text">2.1.1. version linux 2.6.13</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-2-Late-Version"><span class="nav-text">2.1.2. Late Version</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-LDT"><span class="nav-text">2.2. LDT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-Kernel-amp-User-Segment"><span class="nav-text">2.3. Kernel &amp; User Segment</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-分页"><span class="nav-text">2. 分页</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-x86分页"><span class="nav-text">2.1. x86分页</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-ARM"><span class="nav-text">2.2. ARM</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-ARM64"><span class="nav-text">2.3. ARM64</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-RISC-V"><span class="nav-text">2.4. RISC-V</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Leo Zhou</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Zhou</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

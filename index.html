@@ -164,6 +164,155 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/05/UTLK-Chapter-2-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/01/05/UTLK-Chapter-2-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">UTLK Chapter 2 读书笔记</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2020-01-05 15:54:45 / Modified: 15:55:47" itemprop="dateCreated datePublished" datetime="2020-01-05T15:54:45+08:00">2020-01-05</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="0-Address"><a href="#0-Address" class="headerlink" title="0. Address"></a>0. Address</h1><ul>
+<li>Logical Address -&gt; 段式<ul>
+<li>16bit Segment Selector</li>
+<li>32bit Offset</li>
+</ul>
+</li>
+<li>Linear Address (Vitual Address) -&gt; 页式</li>
+<li>Physical Address</li>
+</ul>
+<h1 id="1-分段"><a href="#1-分段" class="headerlink" title="1. 分段"></a>1. 分段</h1><p>一个段的描述会被分成两块：</p>
+<ul>
+<li>Segment Selector: 类似reference id，16bit长度，用于描述<ul>
+<li>一个Segment的index</li>
+<li>TI(Table Indicator): 描述Segment是在GDT还是LDT</li>
+<li>RPL(Requestor Privilege Level)</li>
+</ul>
+</li>
+<li>Segment Descriptor: 描述Segment本身的信息，64bit，会有不同的类型：<ul>
+<li>Code Segment Descriptor</li>
+<li>Data Segment Descriptor</li>
+<li>Task State Segment Descriptor (TSSD)</li>
+<li>Local Descriptor Table Descriptor (LDTD)</li>
+</ul>
+</li>
+</ul>
+<p>为了加速代码执行，x86本身会提供额外的寄存器来保存Segment Selector：cs,ss,ds。</p>
+<h1 id="2-Segment-in-Linux"><a href="#2-Segment-in-Linux" class="headerlink" title="2. Segment in Linux"></a>2. Segment in Linux</h1><h2 id="2-1-GDT"><a href="#2-1-GDT" class="headerlink" title="2.1. GDT"></a>2.1. GDT</h2><p>每一个CPU core都会有自己的GDT，并且大部分情况下，都是一样的内容。Linux kernel使用的GDT长度为32 slots。</p>
+<h3 id="2-1-1-version-linux-2-6-13"><a href="#2-1-1-version-linux-2-6-13" class="headerlink" title="2.1.1. version linux 2.6.13"></a>2.1.1. version linux 2.6.13</h3><p>linux 2.6.13中(UTLK中的版本)，x86的GDT定义很直接(arch/i386/kernel/head.S)：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * The boot_gdt_table must mirror the equivalent in setup.S and is</span><br><span class="line"> * used only for booting.</span><br><span class="line"> */</span><br><span class="line">	.align L1_CACHE_BYTES</span><br><span class="line">ENTRY(boot_gdt_table)</span><br><span class="line">	.fill GDT_ENTRY_BOOT_CS,8,0</span><br><span class="line">	.quad 0x00cf9a000000ffff	/* kernel 4GB code at 0x00000000 */</span><br><span class="line">	.quad 0x00cf92000000ffff	/* kernel 4GB data at 0x00000000 */</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * The Global Descriptor Table contains 28 quadwords, per-CPU.</span><br><span class="line"> */</span><br><span class="line">	.align PAGE_SIZE_asm</span><br><span class="line">ENTRY(cpu_gdt_table)</span><br><span class="line">	.quad 0x0000000000000000	/* NULL descriptor */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x0b reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x13 reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x1b reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x20 unused */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x28 unused */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x33 TLS entry 1 */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x3b TLS entry 2 */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x43 TLS entry 3 */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x4b reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x53 reserved */</span><br><span class="line">	.quad 0x0000000000000000	/* 0x5b reserved */</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>可以看到这里有两个gdt，一个是用于boot时候的<code>boot_gdt_table</code>；一个用于平时使用<code>cpu_gdt_table</code>。而这里的32个slot可以直接通过数得到。（笑）</p>
+<h3 id="2-1-2-Late-Version"><a href="#2-1-2-Late-Version" class="headerlink" title="2.1.2. Late Version"></a>2.1.2. Late Version</h3><p>在2.6.13之后的版本(至少在2.6.39及之后)，GDT的定义被转移到了<code>arch/x86/kernel/cpu/common.c</code>中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">DEFINE_PER_CPU_PAGE_ALIGNED(struct gdt_page, gdt_page) = &#123; .gdt = &#123;</span><br><span class="line">#ifdef CONFIG_X86_64</span><br><span class="line">	[GDT_ENTRY_KERNEL32_CS]		= GDT_ENTRY_INIT(0xc09b, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(0xa09b, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(0xc093, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER32_CS]	= GDT_ENTRY_INIT(0xc0fb, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(0xc0f3, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(0xa0fb, 0, 0xfffff),</span><br><span class="line">#else</span><br><span class="line">	[GDT_ENTRY_KERNEL_CS]		= GDT_ENTRY_INIT(0xc09a, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_KERNEL_DS]		= GDT_ENTRY_INIT(0xc092, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_CS]	= GDT_ENTRY_INIT(0xc0fa, 0, 0xfffff),</span><br><span class="line">	[GDT_ENTRY_DEFAULT_USER_DS]	= GDT_ENTRY_INIT(0xc0f2, 0, 0xfffff),</span><br></pre></td></tr></table></figure>
+<p>其中的定义4.13之前：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">#define GDT_ENTRY_INIT(flags, base, limit) &#123; &#123; &#123; \</span><br><span class="line">		.a = ((limit) &amp; 0xffff) | (((base) &amp; 0xffff) &lt;&lt; 16), \</span><br><span class="line">		.b = (((base) &amp; 0xff0000) &gt;&gt; 16) | (((flags) &amp; 0xf0ff) &lt;&lt; 8) | \</span><br><span class="line">			((limit) &amp; 0xf0000) | ((base) &amp; 0xff000000), \</span><br><span class="line">	&#125; &#125; &#125;</span><br></pre></td></tr></table></figure>
+<p>4.13之后：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">#define GDT_ENTRY_INIT(flags, base, limit)			\</span><br><span class="line">	&#123;							\</span><br><span class="line">		.limit0		= (u16) (limit),		\</span><br><span class="line">		.limit1		= ((limit) &gt;&gt; 16) &amp; 0x0F,	\</span><br><span class="line">		.base0		= (u16) (base),			\</span><br><span class="line">		.base1		= ((base) &gt;&gt; 16) &amp; 0xFF,	\</span><br><span class="line">		.base2		= ((base) &gt;&gt; 24) &amp; 0xFF,	\</span><br><span class="line">		.type		= (flags &amp; 0x0f),		\</span><br><span class="line">		.s		= (flags &gt;&gt; 4) &amp; 0x01,		\</span><br><span class="line">		.dpl		= (flags &gt;&gt; 5) &amp; 0x03,		\</span><br><span class="line">		.p		= (flags &gt;&gt; 7) &amp; 0x01,		\</span><br><span class="line">		.avl		= (flags &gt;&gt; 12) &amp; 0x01,		\</span><br><span class="line">		.l		= (flags &gt;&gt; 13) &amp; 0x01,		\</span><br><span class="line">		.d		= (flags &gt;&gt; 14) &amp; 0x01,		\</span><br><span class="line">		.g		= (flags &gt;&gt; 15) &amp; 0x01,		\</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>其中32 slots定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">gdt_page</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">desc_struct</span> <span class="title">gdt</span>[<span class="title">GDT_ENTRIES</span>];</span></span><br><span class="line">&#125; __attribute__((aligned(PAGE_SIZE)));</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Number of entries in the GDT table:</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_ENTRIES			16</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> GDT_SIZE			(GDT_ENTRIES*8)</span></span><br></pre></td></tr></table></figure>
+<p>同时可以看到每一个slot的长度是64bit，8bytes。</p>
+<h2 id="2-2-LDT"><a href="#2-2-LDT" class="headerlink" title="2.2. LDT"></a>2.2. LDT</h2><p>LDT在默认情况下，每一个core也只有一个，对应的descriptor分配在gdt固定的位置上。slots个数为8192，单个slot长度为8 bytes，这些定义在2.6.13后的linux版本中保持一致：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/* Maximum number of LDT entries supported. */</span><br><span class="line">#define LDT_ENTRIES	8192</span><br><span class="line">/* The size of each LDT entry. */</span><br><span class="line">#define LDT_ENTRY_SIZE	8</span><br></pre></td></tr></table></figure>
+<h2 id="2-3-Kernel-amp-User-Segment"><a href="#2-3-Kernel-amp-User-Segment" class="headerlink" title="2.3. Kernel &amp; User Segment"></a>2.3. Kernel &amp; User Segment</h2><p>对于指令和数据段，Linux只是简单的使用了x86的段结构，包括：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// --------- sgement.h</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * Segment selector values corresponding to the above entries:</span><br><span class="line"> */</span><br><span class="line"></span><br><span class="line">#define __KERNEL_CS			(GDT_ENTRY_KERNEL_CS*8)</span><br><span class="line">#define __KERNEL_DS			(GDT_ENTRY_KERNEL_DS*8)</span><br><span class="line">#define __USER_DS			(GDT_ENTRY_DEFAULT_USER_DS*8 + 3)</span><br><span class="line">#define __USER_CS			(GDT_ENTRY_DEFAULT_USER_CS*8 + 3)</span><br><span class="line">#define __ESPFIX_SS			(GDT_ENTRY_ESPFIX_SS*8)</span><br></pre></td></tr></table></figure>
+<p>其中后续的都是gdt的index：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">#define GDT_ENTRY_KERNEL_CS		12</span><br><span class="line">#define GDT_ENTRY_KERNEL_DS		13</span><br><span class="line">#define GDT_ENTRY_DEFAULT_USER_CS	14</span><br><span class="line">#define GDT_ENTRY_DEFAULT_USER_DS	15</span><br><span class="line">...</span><br><span class="line">#define GDT_ENTRY_ESPFIX_SS		26</span><br></pre></td></tr></table></figure>
+<h1 id="2-分页"><a href="#2-分页" class="headerlink" title="2. 分页"></a>2. 分页</h1><p>64bit的x86_64的page size依然是4KB，但是包含4级页表：</p>
+<ul>
+<li>address size bits: 48</li>
+<li>linear address split: 9 + 9 + 9 + 9 + 12</li>
+</ul>
+<p>Linux的页表包括多层，最多4层：</p>
+<ul>
+<li>Page Global Directory -&gt; PGDIR_SHIFT</li>
+<li>Page Upper Directory -&gt; PUD_SHIFT = 30</li>
+<li>Page Middle Directory -&gt; PMD_SHIFT = 21</li>
+<li>Page Table -&gt;  PAGE_SHIFT = 12</li>
+</ul>
+<p>其实x86最多支持5层：<a href="https://software.intel.com/sites/default/files/managed/2b/80/5-level_paging_white_paper.pdf" target="_blank" rel="noopener">5-Level Paging and 5-Level EPT</a>。因此额外加入了一个P4D_SHIFT(Page 4th Directory)。linux因此也加入了新的patch: <a href="https://www.phoronix.com/scan.php?page=news_item&amp;px=Intel-5-Level-Paging" target="_blank" rel="noopener">Intel Working On 5-Level Paging To Increase Linux Virtual/Physical Address Space</a></p>
+<h2 id="2-1-x86分页"><a href="#2-1-x86分页" class="headerlink" title="2.1. x86分页"></a>2.1. x86分页</h2><p>x86代码中支持2，3，4层分页，分别在不同的文件中定义：</p>
+<ul>
+<li>arch/x86/include/asm/pgtable-2level_types.h</li>
+<li>arch/x86/include/asm/pgtable-3level_types.h</li>
+<li>arch/x86/include/asm/pgtable_32_types.h</li>
+<li>arch/x86/include/asm/pgtable_64_types.h</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">#ifdef CONFIG_X86_5LEVEL</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * PGDIR_SHIFT determines what a top-level page table entry can map</span><br><span class="line"> */</span><br><span class="line">#define PGDIR_SHIFT	pgdir_shift</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * 4th level page in 5-level paging case</span><br><span class="line"> */</span><br><span class="line">#define P4D_SHIFT		39</span><br><span class="line"></span><br><span class="line">#define MAX_POSSIBLE_PHYSMEM_BITS	52</span><br><span class="line"></span><br><span class="line">#else /* CONFIG_X86_5LEVEL */</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * PGDIR_SHIFT determines what a top-level page table entry can map</span><br><span class="line"> */</span><br><span class="line">#define pgdir_shift		39</span><br><span class="line"></span><br><span class="line">#endif /* CONFIG_X86_5LEVEL */</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * 3rd level page</span><br><span class="line"> */</span><br><span class="line">#define PUD_SHIFT	30</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * PMD_SHIFT determines the size of the area a middle-level</span><br><span class="line"> * page table can map</span><br><span class="line"> */</span><br><span class="line">#define PMD_SHIFT	21</span><br><span class="line"></span><br><span class="line">/* PAGE_SHIFT determines the page size */</span><br><span class="line">#define PAGE_SHIFT		12</span><br></pre></td></tr></table></figure>
+<p>注意这里的长度是page table的一个entry所指向的地址长度，而不是总的长度，所以这里也就看不到PTE表的SHIFT定义了。</p>
+<h2 id="2-2-ARM"><a href="#2-2-ARM" class="headerlink" title="2.2. ARM"></a>2.2. ARM</h2><p>ARM本身支持多种page size，linux使用了4KB，两级/三级页表：</p>
+<ul>
+<li>PGDIR_SHIFT -&gt; 21, 30</li>
+<li>PMD_SHIFT -&gt; 21, 21</li>
+<li>PAGE_SIZE -&gt; 12, 12</li>
+</ul>
+<p>有意思的是2级页表的情况下，第一级页表有2048 entry(2^11)，每个entry 8bytes，包括两个指针，每一个都指向一个二级页表；不过这两个页表在内存上市连续的(每一个叫一个section)，每一个都有256个entry，合起来就有2^9 = 512 entry。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#define PTRS_PER_PTE		512</span><br><span class="line">#define PTRS_PER_PMD		1</span><br><span class="line">#define PTRS_PER_PGD		2048</span><br><span class="line"></span><br><span class="line">#define SECTION_SHIFT		20</span><br><span class="line">#define SECTION_SIZE		(1UL &lt;&lt; SECTION_SHIFT)</span><br><span class="line">#define SECTION_MASK		(~(SECTION_SIZE-1))</span><br></pre></td></tr></table></figure>
+<p>ARM的三层页表是来支持huge page的。</p>
+<h2 id="2-3-ARM64"><a href="#2-3-ARM64" class="headerlink" title="2.3. ARM64"></a>2.3. ARM64</h2><p>ARM64支持最多4级页表和最大64KB page size。linux选择了：</p>
+<ul>
+<li>3 (39bits)or 4 (48bits)级页表 + 4KB page size</li>
+<li>2 (42bits)级页表 + 3 (52bits)级页表+ 64KB page size</li>
+</ul>
+<h2 id="2-4-RISC-V"><a href="#2-4-RISC-V" class="headerlink" title="2.4. RISC-V"></a>2.4. RISC-V</h2><p>RISC-V本身支持非常多的virtual memory page的layout，参考：</p>
+<ul>
+<li><a href="https://simonsungm.github.io/2019/10/20/RISC-V-Linux-Page-Table-I/" target="_blank" rel="noopener">RISC-V Linux Page Table I</a></li>
+<li><a href="https://riscv.org/specifications/privileged-isa/" target="_blank" rel="noopener">Privileged ISA Specification</a></li>
+</ul>
+<p>linux选择了：</p>
+<ul>
+<li>2级(22bits)页表 + 4KB page size</li>
+<li>三级页表(22bits, 30bits) + 4KB page size</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/12/29/SSA-Construction-and-Destruction-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1833,224 +1982,6 @@ H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保�
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/14/ARM-Register-Quick-View/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Leo Zhou">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="梅子黄时雨">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2019/11/14/ARM-Register-Quick-View/" class="post-title-link" itemprop="url">ARM ISA Overview</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-11-14 17:23:35" itemprop="dateCreated datePublished" datetime="2019-11-14T17:23:35+08:00">2019-11-14</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2019-11-27 19:53:41" itemprop="dateModified" datetime="2019-11-27T19:53:41+08:00">2019-11-27</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-指令"><a href="#1-指令" class="headerlink" title="1. 指令"></a>1. 指令</h1><p>ARM中能看到的指令集包括：</p>
-<ul>
-<li><strong>thumb</strong>: 16bit的指令集</li>
-<li><strong>thumb-2</strong>: thumb的升级版，16bit/32bit混合指令集</li>
-<li><strong>arm</strong>: 32bit的指令集</li>
-<li><strong>A32</strong>: ARMv8中的<strong>arm</strong>指令集</li>
-<li><strong>T32</strong>: ARMv8中的<strong>thumb-2</strong>指令集，同时包含一些拓展</li>
-<li><strong>A64</strong>: ARMv8的64bit的指令集</li>
-<li><strong>Neon</strong>: ARM的SIMD指令集</li>
-<li></li>
-</ul>
-<p>ARMv8支持两种state：</p>
-<ul>
-<li>AArch64: 使用A64指令集，一种32bit fix length的指令集<ul>
-<li>支持31个64bit的通用寄存器</li>
-<li>使用64bit的PC和SP寄存器</li>
-<li>支持32个128bit的SIMD寄存器</li>
-</ul>
-</li>
-<li>AArch32: 支持A32或者T32指令集<ul>
-<li>支持32个32bit的通用寄存器</li>
-<li>使用32bit的PC和SP寄存器</li>
-<li>支持32个64bit的SIMD寄存器</li>
-</ul>
-</li>
-</ul>
-<p>注意的是ARMv8的A32和T32向前兼容的同时，还包括了其他一些拓展。</p>
-<h1 id="2-ARM-Profile"><a href="#2-ARM-Profile" class="headerlink" title="2. ARM Profile"></a>2. ARM Profile</h1><p>ARM系列一般都能看到A，R和M系列，分别代表着：普通应用，实时计算和移动处理的三种不同的需求。</p>
-<p>具体以ARMv8为例子，下面摘自ARM的官方文档：</p>
-<blockquote>
-<ul>
-<li>A Application profile:<ul>
-<li>Supports a Virtual Memory System Architecture (VMSA) based on a Memory Management Unit (MMU).</li>
-<li>Supports the A64, A32, and T32 instruction sets.</li>
-</ul>
-</li>
-<li>R Real-time profile:<ul>
-<li>Supports a Protected Memory System Architecture (PMSA) based on a Memory Protection Unit (MPU).<br>-Supports the A32 and T32 instruction sets.</li>
-</ul>
-</li>
-<li>M Microcontroller profile, described in this manual:<ul>
-<li>Implements a programmers’ model designed for low-latency interrupt processing, with hardware stacking of registers and support for writing interrupt handlers in high-level languages.</li>
-<li>Optionally implements a variant of the R-profile PMSA.</li>
-<li>Supports a variant of the T32 instruction set.</li>
-</ul>
-</li>
-</ul>
-</blockquote>
-<h1 id="3-LLVM-ARMv7-Register"><a href="#3-LLVM-ARMv7-Register" class="headerlink" title="3. LLVM ARMv7 Register"></a>3. LLVM ARMv7 Register</h1><p>我们可以在<code>lib/target/ARM/ARMRegisterInfo.td</code>中找到所有寄存器的定义：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">// Registers are identified with 4-bit ID numbers.</span><br><span class="line">class ARMReg&lt;bits&lt;16&gt; Enc, string n, list&lt;Register&gt; subregs = [],</span><br><span class="line">             list&lt;string&gt; altNames = []&gt; : Register&lt;n, altNames&gt; &#123;</span><br><span class="line">  let HWEncoding = Enc;</span><br><span class="line">  let Namespace = &quot;ARM&quot;;</span><br><span class="line">  let SubRegs = subregs;</span><br><span class="line">  // All bits of ARM registers with sub-registers are covered by sub-registers.</span><br><span class="line">  let CoveredBySubRegs = 1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class ARMFReg&lt;bits&lt;16&gt; Enc, string n&gt; : Register&lt;n&gt; &#123;</span><br><span class="line">  let HWEncoding = Enc;</span><br><span class="line">  let Namespace = &quot;ARM&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>上述是两个基类，定义了整数寄存器和浮点寄存器的基类。总结来说，ARMv7的数据存储寄存器包括：</p>
-<ul>
-<li><strong>r1-r12</strong> 32bit integer register</li>
-<li><strong>pc</strong>, <strong>lr</strong>, <strong>sp</strong> 32bit integer register</li>
-<li><strong>q0-q16</strong> 128bit integer register<ul>
-<li>sub-reg: <strong>d0-d15</strong> 64bit float register<ul>
-<li>sub-reg: <strong>s0-s31</strong> 32bit float register</li>
-</ul>
-</li>
-<li>sub-reg: <strong>d16-d31</strong> 64bit float regiter</li>
-</ul>
-</li>
-</ul>
-<p>一般而言，有些寄存器有固定/约定的用处：</p>
-<ul>
-<li>pc  == Program Counter</li>
-<li>lr  == Link Register</li>
-<li>sp  == Stack Pointer</li>
-<li>r12 == ip (scratch)</li>
-<li>r7  == Frame Pointer (thumb-style backtraces)</li>
-<li>r9  == May be reserved as Thread Register</li>
-<li>r11 == Frame Pointer (arm-style backtraces)</li>
-<li>r10 == Stack Limit</li>
-</ul>
-<p>另外还有一系列控制寄存器，以下仅举例后续用到再做分析。除了APSR，大部分其他控制寄存器都是要在非用户模式下才能操作：</p>
-<ul>
-<li>Program Status Register<ul>
-<li><strong>APSR</strong>: Application Program Status Register, 32bit integer register<ul>
-<li>类似与x86的EFLAGs，用于记录condition flag。</li>
-</ul>
-</li>
-<li><strong>CPSR</strong>: Current Program Status Register, 32bit integer register<ul>
-<li>似乎CPSR是APSR的alias。在用户模式叫APSR，在其他模式叫CPSR。</li>
-</ul>
-</li>
-<li><strong>SPSR</strong>: Saved Program Status Register, 32bit integer register<ul>
-<li>仅在非用户模式下使用，用于保存CPSR的信息，方便跳转回来时候回复环境。</li>
-</ul>
-</li>
-<li><strong>FPSCR</strong>: Floating-Point Status and Control Register, 32bit integer register<ul>
-<li>浮点状态寄存器。</li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Float Special Registe(Only privileged mode)<ul>
-<li><strong>FPSID</strong>: Floating-Point System ID Register, 32bit integer register<ul>
-<li>浮点系统设置寄存器，用来表明NEON/VFP等实现是否被使用。</li>
-</ul>
-</li>
-<li><strong>FPEXC</strong>: Floating-point Exception Register, 32bit integer register<ul>
-<li>用于表明在exception时候如何处理，特别是在NEON/VFP模式下面。</li>
-</ul>
-</li>
-<li><strong>FPINST and FPINST2</strong>Floating-Point Instruction Registers, 32bit integer register</li>
-</ul>
-</li>
-<li><strong>ITSTATE</strong>: Thumb if-then指令状态寄存器。</li>
-</ul>
-<h2 id="3-1-通用寄存器定义"><a href="#3-1-通用寄存器定义" class="headerlink" title="3.1. 通用寄存器定义"></a>3.1. 通用寄存器定义</h2><ul>
-<li>r0 - r15</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">// Integer registers</span><br><span class="line">def R0  : ARMReg&lt; 0, &quot;r0&quot;&gt;,  DwarfRegNum&lt;[0]&gt;;</span><br><span class="line">def R1  : ARMReg&lt; 1, &quot;r1&quot;&gt;,  DwarfRegNum&lt;[1]&gt;;</span><br><span class="line">def R2  : ARMReg&lt; 2, &quot;r2&quot;&gt;,  DwarfRegNum&lt;[2]&gt;;</span><br><span class="line">def R3  : ARMReg&lt; 3, &quot;r3&quot;&gt;,  DwarfRegNum&lt;[3]&gt;;</span><br><span class="line">def R4  : ARMReg&lt; 4, &quot;r4&quot;&gt;,  DwarfRegNum&lt;[4]&gt;;</span><br><span class="line">def R5  : ARMReg&lt; 5, &quot;r5&quot;&gt;,  DwarfRegNum&lt;[5]&gt;;</span><br><span class="line">def R6  : ARMReg&lt; 6, &quot;r6&quot;&gt;,  DwarfRegNum&lt;[6]&gt;;</span><br><span class="line">def R7  : ARMReg&lt; 7, &quot;r7&quot;&gt;,  DwarfRegNum&lt;[7]&gt;;</span><br><span class="line">// These require 32-bit instructions.</span><br><span class="line">let CostPerUse = 1 in &#123;  // extra cost when using</span><br><span class="line">def R8  : ARMReg&lt; 8, &quot;r8&quot;&gt;,  DwarfRegNum&lt;[8]&gt;;</span><br><span class="line">def R9  : ARMReg&lt; 9, &quot;r9&quot;&gt;,  DwarfRegNum&lt;[9]&gt;;</span><br><span class="line">def R10 : ARMReg&lt;10, &quot;r10&quot;&gt;, DwarfRegNum&lt;[10]&gt;;</span><br><span class="line">def R11 : ARMReg&lt;11, &quot;r11&quot;&gt;, DwarfRegNum&lt;[11]&gt;;</span><br><span class="line">def R12 : ARMReg&lt;12, &quot;r12&quot;&gt;, DwarfRegNum&lt;[12]&gt;;</span><br><span class="line">let RegAltNameIndices = [RegNamesRaw] in &#123; // 定义别名</span><br><span class="line">def SP  : ARMReg&lt;13, &quot;sp&quot;, [], [&quot;r13&quot;]&gt;,  DwarfRegNum&lt;[13]&gt;;</span><br><span class="line">def LR  : ARMReg&lt;14, &quot;lr&quot;, [], [&quot;r14&quot;]&gt;,  DwarfRegNum&lt;[14]&gt;;</span><br><span class="line">def PC  : ARMReg&lt;15, &quot;pc&quot;, [], [&quot;r15&quot;]&gt;,  DwarfRegNum&lt;[15]&gt;;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>q0 - q15</li>
-</ul>
-<p>q系列的寄存器包含了一系列的子寄存器，因此需要一系列的SubRegisterIndex来定义他们的关系：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">def dsub_0 : SubRegIndex&lt;64&gt;;</span><br><span class="line">def dsub_1 : SubRegIndex&lt;64, 64&gt;;</span><br></pre></td></tr></table></figure>
-<p>第一条描述了qx中的d(2x)index：从0开始，长度为64bit；第二条描述了d(2x+1)index：从64bit开始，长度64bit。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">// Advanced SIMD (NEON) defines 16 quad-word aliases</span><br><span class="line">let SubRegIndices = [dsub_0, dsub_1] in &#123;</span><br><span class="line">def Q0  : ARMReg&lt; 0,  &quot;q0&quot;, [D0,   D1]&gt;;</span><br><span class="line">def Q1  : ARMReg&lt; 1,  &quot;q1&quot;, [D2,   D3]&gt;;</span><br><span class="line">def Q2  : ARMReg&lt; 2,  &quot;q2&quot;, [D4,   D5]&gt;;</span><br><span class="line">def Q3  : ARMReg&lt; 3,  &quot;q3&quot;, [D6,   D7]&gt;;</span><br><span class="line">def Q4  : ARMReg&lt; 4,  &quot;q4&quot;, [D8,   D9]&gt;;</span><br><span class="line">def Q5  : ARMReg&lt; 5,  &quot;q5&quot;, [D10, D11]&gt;;</span><br><span class="line">def Q6  : ARMReg&lt; 6,  &quot;q6&quot;, [D12, D13]&gt;;</span><br><span class="line">def Q7  : ARMReg&lt; 7,  &quot;q7&quot;, [D14, D15]&gt;;</span><br><span class="line">&#125;</span><br><span class="line">let SubRegIndices = [dsub_0, dsub_1] in &#123;</span><br><span class="line">def Q8  : ARMReg&lt; 8,  &quot;q8&quot;, [D16, D17]&gt;;</span><br><span class="line">def Q9  : ARMReg&lt; 9,  &quot;q9&quot;, [D18, D19]&gt;;</span><br><span class="line">def Q10 : ARMReg&lt;10, &quot;q10&quot;, [D20, D21]&gt;;</span><br><span class="line">def Q11 : ARMReg&lt;11, &quot;q11&quot;, [D22, D23]&gt;;</span><br><span class="line">def Q12 : ARMReg&lt;12, &quot;q12&quot;, [D24, D25]&gt;;</span><br><span class="line">def Q13 : ARMReg&lt;13, &quot;q13&quot;, [D26, D27]&gt;;</span><br><span class="line">def Q14 : ARMReg&lt;14, &quot;q14&quot;, [D28, D29]&gt;;</span><br><span class="line">def Q15 : ARMReg&lt;15, &quot;q15&quot;, [D30, D31]&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到这里的<code>let SubRegIndices = [dsub_0, dsub_1]</code>。</p>
-<h2 id="3-2-控制寄存器的定义"><a href="#3-2-控制寄存器的定义" class="headerlink" title="3.2. 控制寄存器的定义"></a>3.2. 控制寄存器的定义</h2><p>相对没有什么花头，简单的定义，略掉一些。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">// Current Program Status Register.</span><br><span class="line">// We model fpscr with two registers: FPSCR models the control bits and will be</span><br><span class="line">// reserved. FPSCR_NZCV models the flag bits and will be unreserved. APSR_NZCV</span><br><span class="line">// models the APSR when it&apos;s accessed by some special instructions. In such cases</span><br><span class="line">// it has the same encoding as PC.</span><br><span class="line">def CPSR       : ARMReg&lt;0,  &quot;cpsr&quot;&gt;;</span><br><span class="line">def APSR       : ARMReg&lt;15, &quot;apsr&quot;&gt;;</span><br><span class="line">def APSR_NZCV  : ARMReg&lt;15, &quot;apsr_nzcv&quot;&gt;;</span><br><span class="line">def SPSR       : ARMReg&lt;2,  &quot;spsr&quot;&gt;;</span><br><span class="line">def FPSCR      : ARMReg&lt;3,  &quot;fpscr&quot;&gt;;</span><br><span class="line">def FPSCR_NZCV : ARMReg&lt;3,  &quot;fpscr_nzcv&quot;&gt; &#123;</span><br><span class="line">  let Aliases = [FPSCR];</span><br><span class="line">&#125;</span><br><span class="line">def ITSTATE    : ARMReg&lt;4, &quot;itstate&quot;&gt;;</span><br><span class="line"></span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>唯一可以注意的是，为了一些操作方便，这里对于NZCV的flags做了alias的定义。</p>
-<h2 id="3-3-定义RegisterClass"><a href="#3-3-定义RegisterClass" class="headerlink" title="3.3. 定义RegisterClass"></a>3.3. 定义RegisterClass</h2><p>随后需要告诉LLVM如何使用这些寄存器，或者说哪些寄存器是一类的。比如，对于通用寄存器的定义：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">def GPR : RegisterClass&lt;&quot;ARM&quot;, [i32], 32, (add (sequence &quot;R%u&quot;, 0, 12),</span><br><span class="line">                                               SP, LR, PC)&gt; &#123;</span><br><span class="line">  // Allocate LR as the first CSR since it is always saved anyway.</span><br><span class="line">  // For Thumb1 mode, we don&apos;t want to allocate hi regs at all, as we don&apos;t</span><br><span class="line">  // know how to spill them. If we make our prologue/epilogue code smarter at</span><br><span class="line">  // some point, we can go back to using the above allocation orders for the</span><br><span class="line">  // Thumb1 instructions that know how to use hi regs.</span><br><span class="line">  let AltOrders = [(add LR, GPR), (trunc GPR, 8),</span><br><span class="line">                   (add (trunc GPR, 8), R12, LR, (shl GPR, 8))];</span><br><span class="line">  let AltOrderSelect = [&#123;</span><br><span class="line">      return MF.getSubtarget&lt;ARMSubtarget&gt;().getGPRAllocationOrder(MF);</span><br><span class="line">  &#125;];</span><br><span class="line">  let DiagnosticString = &quot;operand must be a register in range [r0, r15]&quot;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// GPRs without the PC.  Some ARM instructions do not allow the PC in</span><br><span class="line">// certain operand slots, particularly as the destination.  Primarily</span><br><span class="line">// useful for disassembly.</span><br><span class="line">def GPRnopc : RegisterClass&lt;&quot;ARM&quot;, [i32], 32, (sub GPR, PC)&gt; &#123;</span><br><span class="line">  let AltOrders = [(add LR, GPRnopc), (trunc GPRnopc, 8),</span><br><span class="line">                   (add (trunc GPRnopc, 8), R12, LR, (shl GPRnopc, 8))];</span><br><span class="line">  let AltOrderSelect = [&#123;</span><br><span class="line">      return MF.getSubtarget&lt;ARMSubtarget&gt;().getGPRAllocationOrder(MF);</span><br><span class="line">  &#125;];</span><br><span class="line">  let DiagnosticString = &quot;operand must be a register in range [r0, r14]&quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里定义了：</p>
-<ul>
-<li>class包含了哪些寄存器</li>
-<li>选择的顺序</li>
-<li>diagnostic信息</li>
-</ul>
-<h1 id="4-LLVM-ARMv8-Register"><a href="#4-LLVM-ARMv8-Register" class="headerlink" title="4. LLVM ARMv8 Register"></a>4. LLVM ARMv8 Register</h1><p>ARMv8的通用寄存器升级到了64bit，包含了</p>
-<ul>
-<li>X0-X31, 最后三个为FR,LR,SR,XZR<ul>
-<li>sub-register：所有X寄存器的低32bit定义为：W0-W31，最后两个为WSP,WZR</li>
-</ul>
-</li>
-<li>V0-V31, 类似于ARMv7中的Q0-Q31, 增加了一倍的浮点寄存器<ul>
-<li>d,s和ARMv7一致，额外增加了8bit的b类型寄存器</li>
-<li>v是用来引用新增的vector model的。</li>
-</ul>
-</li>
-</ul>
-<p>EFLAGS被单独移出去了，更加详细控制寄存器信息，等到对应的命令时候再描述。</p>
-<h2 id="4-1-通用寄存器定义"><a href="#4-1-通用寄存器定义" class="headerlink" title="4.1. 通用寄存器定义"></a>4.1. 通用寄存器定义</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">def W0    : AArch64Reg&lt;0,   &quot;w0&quot; &gt;, DwarfRegNum&lt;[0]&gt;;</span><br><span class="line">def W1    : AArch64Reg&lt;1,   &quot;w1&quot; &gt;, DwarfRegNum&lt;[1]&gt;;</span><br><span class="line">def W2    : AArch64Reg&lt;2,   &quot;w2&quot; &gt;, DwarfRegNum&lt;[2]&gt;;</span><br><span class="line">def W3    : AArch64Reg&lt;3,   &quot;w3&quot; &gt;, DwarfRegNum&lt;[3]&gt;;</span><br><span class="line">def W4    : AArch64Reg&lt;4,   &quot;w4&quot; &gt;, DwarfRegNum&lt;[4]&gt;;</span><br><span class="line">def W5    : AArch64Reg&lt;5,   &quot;w5&quot; &gt;, DwarfRegNum&lt;[5]&gt;;</span><br><span class="line">...</span><br><span class="line">def W28   : AArch64Reg&lt;28, &quot;w28&quot;&gt;, DwarfRegNum&lt;[28]&gt;;</span><br><span class="line">def W29   : AArch64Reg&lt;29, &quot;w29&quot;&gt;, DwarfRegNum&lt;[29]&gt;;</span><br><span class="line">def W30   : AArch64Reg&lt;30, &quot;w30&quot;&gt;, DwarfRegNum&lt;[30]&gt;;</span><br><span class="line">def WSP   : AArch64Reg&lt;31, &quot;wsp&quot;&gt;, DwarfRegNum&lt;[31]&gt;;</span><br><span class="line">def WZR   : AArch64Reg&lt;31, &quot;wzr&quot;&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [sub_32] in &#123;</span><br><span class="line">def X0    : AArch64Reg&lt;0,   &quot;x0&quot;,  [W0]&gt;, DwarfRegAlias&lt;W0&gt;;</span><br><span class="line">def X1    : AArch64Reg&lt;1,   &quot;x1&quot;,  [W1]&gt;, DwarfRegAlias&lt;W1&gt;;</span><br><span class="line">def X2    : AArch64Reg&lt;2,   &quot;x2&quot;,  [W2]&gt;, DwarfRegAlias&lt;W2&gt;;</span><br><span class="line">def X3    : AArch64Reg&lt;3,   &quot;x3&quot;,  [W3]&gt;, DwarfRegAlias&lt;W3&gt;;</span><br><span class="line">def X4    : AArch64Reg&lt;4,   &quot;x4&quot;,  [W4]&gt;, DwarfRegAlias&lt;W4&gt;;</span><br><span class="line">def X5    : AArch64Reg&lt;5,   &quot;x5&quot;,  [W5]&gt;, DwarfRegAlias&lt;W5&gt;;</span><br><span class="line">...</span><br><span class="line">def X24   : AArch64Reg&lt;24, &quot;x24&quot;, [W24]&gt;, DwarfRegAlias&lt;W24&gt;;</span><br><span class="line">def X28   : AArch64Reg&lt;28, &quot;x28&quot;, [W28]&gt;, DwarfRegAlias&lt;W28&gt;;</span><br><span class="line">def FP    : AArch64Reg&lt;29, &quot;x29&quot;, [W29]&gt;, DwarfRegAlias&lt;W29&gt;;</span><br><span class="line">def LR    : AArch64Reg&lt;30, &quot;x30&quot;, [W30]&gt;, DwarfRegAlias&lt;W30&gt;;</span><br><span class="line">def SP    : AArch64Reg&lt;31, &quot;sp&quot;,  [WSP]&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line">def XZR   : AArch64Reg&lt;31, &quot;xzr&quot;, [WZR]&gt;, DwarfRegAlias&lt;WSP&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>没有什么特别的。</p>
-<h2 id="4-2-SIMD-amp-FP寄存器"><a href="#4-2-SIMD-amp-FP寄存器" class="headerlink" title="4.2. SIMD &amp; FP寄存器"></a>4.2. SIMD &amp; FP寄存器</h2><p>普通的定义没有什么特别，只是加了一个b寄存器。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">def B0    : AArch64Reg&lt;0,   &quot;b0&quot;&gt;, DwarfRegNum&lt;[64]&gt;;</span><br><span class="line">...</span><br><span class="line">def B31   : AArch64Reg&lt;31, &quot;b31&quot;&gt;, DwarfRegNum&lt;[95]&gt;;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [bsub] in &#123;</span><br><span class="line">def H0    : AArch64Reg&lt;0,   &quot;h0&quot;, [B0]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def H31   : AArch64Reg&lt;31, &quot;h31&quot;, [B31]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [hsub] in &#123;</span><br><span class="line">def S0    : AArch64Reg&lt;0,   &quot;s0&quot;, [H0]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def S31   : AArch64Reg&lt;31, &quot;s31&quot;, [H31]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [ssub], RegAltNameIndices = [vreg, vlist1] in &#123;</span><br><span class="line">def D0    : AArch64Reg&lt;0,   &quot;d0&quot;, [S0], [&quot;v0&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def D31   : AArch64Reg&lt;31, &quot;d31&quot;, [S31], [&quot;v31&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">let SubRegIndices = [dsub], RegAltNameIndices = [vreg, vlist1] in &#123;</span><br><span class="line">def Q0    : AArch64Reg&lt;0,   &quot;q0&quot;, [D0], [&quot;v0&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B0&gt;;</span><br><span class="line">...</span><br><span class="line">def Q31   : AArch64Reg&lt;31, &quot;q31&quot;, [D31], [&quot;v31&quot;, &quot;&quot;]&gt;, DwarfRegAlias&lt;B31&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>SubRegisterIndex定义不再赘述。注意这里sub-register再一个parent-register没有两个了，因为通用寄存器本身翻倍了。</p>
-<h2 id="4-3-Register-Vector定义"><a href="#4-3-Register-Vector定义" class="headerlink" title="4.3. Register Vector定义"></a>4.3. Register Vector定义</h2><p>有意思的是LLVM是如何定义ARMv8中的vector value的使用的。</p>
-<p>首先需要看到的是LLVM对于value type的定义，在LLVM/include/Target/ValueTypes.td中：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">def v8i16  : ValueType&lt;128, 38&gt;;   //  8 x i16 vector value</span><br><span class="line">def v16i16 : ValueType&lt;256, 39&gt;;   // 16 x i16 vector value</span><br><span class="line">def v32i16 : ValueType&lt;512, 40&gt;;   // 32 x i16 vector value</span><br><span class="line">def v64i16 : ValueType&lt;1024,41&gt;;   // 64 x i16 vector value</span><br><span class="line">def v128i16: ValueType&lt;2048,42&gt;;   //128 x i16 vector value</span><br><span class="line"></span><br><span class="line">def v1i32    : ValueType&lt;32 , 43&gt;;   //  1 x i32 vector value</span><br><span class="line">def v2i32    : ValueType&lt;64 , 44&gt;;   //  2 x i32 vector value</span><br><span class="line">def v3i32    : ValueType&lt;96 , 45&gt;;   //  3 x i32 vector value</span><br><span class="line">def v4i32    : ValueType&lt;128, 46&gt;;   //  4 x i32 vector value</span><br><span class="line">def v5i32    : ValueType&lt;160, 47&gt;;   //  5 x i32 vector value</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>这些ValueType会被用在定义RegisterClass时候：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">def FPR64 : RegisterClass&lt;&quot;AArch64&quot;, [f64, i64, v2f32, v1f64, v8i8, v4i16, v2i32,</span><br><span class="line">                                    v1i64, v4f16],</span><br><span class="line">                                    64, (sequence &quot;D%u&quot;, 0, 31)&gt;;</span><br><span class="line">// We don&apos;t (yet) have an f128 legal type, so don&apos;t use that here. We</span><br><span class="line">// normalize 128-bit vectors to v2f64 for arg passing and such, so use</span><br><span class="line">// that here.</span><br><span class="line">def FPR128 : RegisterClass&lt;&quot;AArch64&quot;,</span><br><span class="line">                           [v16i8, v8i16, v4i32, v2i64, v4f32, v2f64, f128,</span><br><span class="line">                            v8f16],</span><br><span class="line">                           128, (sequence &quot;Q%u&quot;, 0, 31)&gt;;</span><br><span class="line">// The lower 16 vector registers.  Some instructions can only take registers</span><br><span class="line">// in this range.</span><br><span class="line">def FPR128_lo : RegisterClass&lt;&quot;AArch64&quot;,</span><br><span class="line">                              [v16i8, v8i16, v4i32, v2i64, v4f32, v2f64, v8f16],</span><br><span class="line">                              128, (trunc FPR128, 16)&gt;;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -2121,12 +2052,12 @@ H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -2151,7 +2082,7 @@ H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保�
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2019</span>
+  <span itemprop="copyrightYear">2020</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
