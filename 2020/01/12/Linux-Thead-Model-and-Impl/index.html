@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://yoursite.com').hostname,
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="Reference POSIX Threads and the Linux Kernel Native POSIX Thread Library (NPTL): CSE 506 Don Porter  linux futex浅析 Linux Kernel 2.4 线程实现机制分析 Basics of Futexes A futex overview and update Searchable Li">
+<meta name="keywords" content="linux,kernel">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux Thead Model and Impl">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;01&#x2F;12&#x2F;Linux-Thead-Model-and-Impl&#x2F;index.html">
+<meta property="og:site_name" content="梅子黄时雨">
+<meta property="og:description" content="Reference POSIX Threads and the Linux Kernel Native POSIX Thread Library (NPTL): CSE 506 Don Porter  linux futex浅析 Linux Kernel 2.4 线程实现机制分析 Basics of Futexes A futex overview and update Searchable Li">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-01-12T15:00:44.243Z">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/01/12/Linux-Thead-Model-and-Impl/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Linux Thead Model and Impl | 梅子黄时雨</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">梅子黄时雨</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/12/Linux-Thead-Model-and-Impl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Linux Thead Model and Impl
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2020-01-12 23:00:24 / Modified: 23:00:44" itemprop="dateCreated datePublished" datetime="2020-01-12T23:00:24+08:00">2020-01-12</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><ul>
+<li><a href="https://landley.net/kdocs/ols/2002/ols2002-pages-330-337.pdf" target="_blank" rel="noopener">POSIX Threads and the Linux Kernel</a></li>
+<li><a href="http://www.cs.unc.edu/~porter/courses/cse506/f12/slides/nptl.pdf" target="_blank" rel="noopener">Native POSIX Thread Library (NPTL): CSE 506 Don Porter </a></li>
+<li><a href="https://yq.aliyun.com/articles/6043" target="_blank" rel="noopener">linux futex浅析</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/linux/kernel/l-thread/index.html" target="_blank" rel="noopener">Linux Kernel 2.4 线程实现机制分析</a></li>
+<li><a href="https://eli.thegreenplace.net/2018/basics-of-futexes/" target="_blank" rel="noopener">Basics of Futexes</a></li>
+<li><a href="https://lwn.net/Articles/360699/" target="_blank" rel="noopener">A futex overview and update</a></li>
+<li><a href="https://filippo.io/linux-syscall-table/" target="_blank" rel="noopener">Searchable Linux Syscall Table for x86 and x86_64</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/linux/l-synch/part1/index.html" target="_blank" rel="noopener">Linux 内核的同步机制，第 1 部分</a></li>
+</ul>
+<h1 id="1-POSIX-Threads-Model"><a href="#1-POSIX-Threads-Model" class="headerlink" title="1. POSIX Threads Model"></a>1. POSIX Threads Model</h1><h2 id="1-1-Definitions"><a href="#1-1-Definitions" class="headerlink" title="1.1. Definitions"></a>1.1. Definitions</h2><ul>
+<li>Process: 主要关注在resource上面<ul>
+<li>an address space and a group of resources all dedicated to running that program.</li>
+</ul>
+</li>
+<li>Thread: 主要是一个process包含多个threads<ul>
+<li>the resources necessary to represent that single thread of execution. </li>
+</ul>
+</li>
+</ul>
+<h2 id="1-2-POSIX-Thread-Model-vs-Linux-Task-Model"><a href="#1-2-POSIX-Thread-Model-vs-Linux-Task-Model" class="headerlink" title="1.2. POSIX Thread Model vs Linux Task Model"></a>1.2. POSIX Thread Model vs Linux Task Model</h2><ul>
+<li>类似黑名单，POSIX中大部分resource是一个process中所有thread shared，除了：<ul>
+<li>CPU registers</li>
+<li>User stack</li>
+<li>Blocked signal mask</li>
+</ul>
+</li>
+<li>而linux类似白名单，大部分resource都是thread独占的，除了：<ul>
+<li>Address space</li>
+<li>Signal handlers</li>
+<li>Open files</li>
+<li>Working directory</li>
+</ul>
+</li>
+</ul>
+<p>在这种情况下，POSIX的thread模型和linux的thread模型会有互相不兼容的问题，最明显的一个就是关于PID，PPID，credentials (user ID, group ID, etc), and pending signal mask.</p>
+<p>换句话说，POSIX中一个process的所有thread是共享一个pid的，但是在linux中，这些所有的thread都有自己独立的pid。</p>
+<p>这又进一步的带来了另外的问题，POSIX关于某个pid的操作是对于整个process而言的。无论是signal, exit, suspend/resume或者shared memory(address)的detach，在POSIX中都是对于一个process中的所有thread的集体操作。</p>
+<p>但是在linux中，这些操作都是对于单个thread的操作，和整体process关系不直接关联。</p>
+<h2 id="1-3-User-Space-amp-Kernel-Space-Thread-Mapping"><a href="#1-3-User-Space-amp-Kernel-Space-Thread-Mapping" class="headerlink" title="1.3. User Space &amp; Kernel Space Thread Mapping"></a>1.3. User Space &amp; Kernel Space Thread Mapping</h2><ul>
+<li>M:1, 问题在于只有一个kernel thread，一旦被阻塞就整体玩完</li>
+<li>1:1, 最容易实现，性能有牺牲，特别是context switch</li>
+<li>M:N，多线程情况下性能能够达到最优，但是实现复杂</li>
+</ul>
+<h1 id="2-LinuxThreads"><a href="#2-LinuxThreads" class="headerlink" title="2. LinuxThreads"></a>2. LinuxThreads</h1><p>LinuxThreads模型使用1:1的模型，但是和POSIX lib的不兼容，因此一个能在POSIX规范中能够运行的binary，不一定能在LinuxThreads lib中正常运行。</p>
+<p>LinuxThreads另外一个特点是有一个Manager Thread。</p>
+<h2 id="2-1-Managed-Thread"><a href="#2-1-Managed-Thread" class="headerlink" title="2.1. Managed Thread"></a>2.1. Managed Thread</h2><p>除了线程调度(1:1模型直接有kernel完成)，其他诸如线程取消、线程间的同步等工作，都是在核外(User Space)线程库中完成的，由Manager Thread负责。</p>
+<p>Manager Thread使用pipe管道来和其他线程进行通讯。管理线程的栈和用户线程的栈是分离的，管理线程在进程堆中通过malloc()分配一个THREAD_MANAGER_STACK_SIZE字节的区域作为自己的运行栈。</p>
+<p>管理线程容易成为瓶颈，这是这种结构的通病；同时，管理线程又负责用户线程的清理工作，因此，尽管管理线程已经屏蔽了大部分的信号，但一旦管理线程死亡，用户线程就不得不手工清理了，而且用户线程并不知道管理线程的状态，之后的线程创建等请求将无人处理。</p>
+<h2 id="2-2-therad-id和process-id"><a href="#2-2-therad-id和process-id" class="headerlink" title="2.2. therad id和process id"></a>2.2. therad id和process id</h2><p>每个LinuxThreads线程都同时具有线程id和进程id，其中进程id就是内核所维护的进程号，而线程id则由LinuxThreads分配和维护。值得注意的是每一个thread都有自己的tid(unique in process)和pid(unique in whole os)</p>
+<p>因此LinuxThreads的clone函数，对于CLONE_PID没有符合POSIX要求。另外，线程的数量被限制在1024，另外还会收到全局process可用数目的限制，因为这个thread其实就是一个process。</p>
+<h2 id="2-3-signal-amp-同步"><a href="#2-3-signal-amp-同步" class="headerlink" title="2.3. signal &amp; 同步"></a>2.3. signal &amp; 同步</h2><p>LinuxThread中的同步依赖于信号，当接受到一个kill signal之后，manager thread会将其转发给所有其他的thread。同时因为没有线程组的概念，因此其他signal的发送都是对于单一thread的操作。</p>
+<p>LinuxThreads将使用SIGUSR1和SIGUSR2作为内部使用的restart和cancel信号，这样应用程序就不能使用这两个原本为用户保留的信号了。</p>
+<h2 id="2-4-其他问题"><a href="#2-4-其他问题" class="headerlink" title="2.4. 其他问题"></a>2.4. 其他问题</h2><p>还有一些其他和POSIX线程有关的调用LinuxThreads，比如nice、setuid、setrlimit等，都是不兼容POSIX的，只针对一个thread有效果。</p>
+<h1 id="3-NPTL"><a href="#3-NPTL" class="headerlink" title="3. NPTL"></a>3. NPTL</h1><p>2.6版本以后，linux kernel引入了和POSIX兼容的NPTL(Native POSIX Thread Library)多线程库。NPTL也是1:1的user和kernel space thread mapping。</p>
+<h2 id="3-1-futex-Fast-userspace-mutex"><a href="#3-1-futex-Fast-userspace-mutex" class="headerlink" title="3.1. futex (Fast userspace mutex)"></a>3.1. futex (Fast userspace mutex)</h2><p>NPTL同时引入了futex，提供了一种用户thread的同步方式，具体包括了如下的特点：</p>
+<ul>
+<li>首先尝试在user space使用atomic的方法来快速加锁。在大部分时间，类似java的light lock，能够快速的加锁。</li>
+<li>如果加锁失败，那么thread可以尝试：<ul>
+<li>在原地spinning，等待lock free</li>
+<li>调用syscal futex来加锁，这时候需要陷入linux kernel；futex加锁依是针对address的。</li>
+</ul>
+</li>
+</ul>
+<p>另外futex可以用来semaphores和mutex。</p>
+<p>更加详细的syscall的列表可以在<code>/include/uapi/asm-generic/unistd.h</code>中找到。</p>
+<h2 id="3-2-pid-amp-tgid"><a href="#3-2-pid-amp-tgid" class="headerlink" title="3.2. pid &amp; tgid"></a>3.2. pid &amp; tgid</h2><p>首先需要注意的是，两个不同的操作的结果：</p>
+<ul>
+<li>fork : 产生一个新的process</li>
+<li>pthread_create : 产生一个新的thread</li>
+</ul>
+<p>但实际上fork和pthread_create都会调用到do_fork，因此所有的process都会有pid，tgid和ppid。</p>
+<p>另外需要注意的是，即使在NPTL情况下，每一个thread实际还是lwp(light weight process)。</p>
+<ul>
+<li>pid: process(thread)的id，每一个thread/process都不一样，全局唯一</li>
+<li>ppid: 创建process(thread)的parent process的pid</li>
+<li>tgid(thread group id): 所有在同一个线程组中共享的id，对于线程组leader而言有pid = tgid</li>
+</ul>
+<p>NPTL为了兼容POSIX的操作，getpid或者对于process的操作会返回tgid或者对于所有包含相同tgid的process的操作。<br>因此，其实linux kernel内部会有两套对于process/thread操作：一套是对于tgid，一套是真实对于单个thread的。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/linux/" rel="tag"># linux</a>
+              <a href="/tags/kernel/" rel="tag"># kernel</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/01/05/UTLK-Chapter-2-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" rel="prev" title="UTLK Chapter 2 读书笔记">
+      <i class="fa fa-chevron-left"></i> UTLK Chapter 2 读书笔记
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Reference"><span class="nav-text">Reference</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-POSIX-Threads-Model"><span class="nav-text">1. POSIX Threads Model</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-Definitions"><span class="nav-text">1.1. Definitions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-POSIX-Thread-Model-vs-Linux-Task-Model"><span class="nav-text">1.2. POSIX Thread Model vs Linux Task Model</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-User-Space-amp-Kernel-Space-Thread-Mapping"><span class="nav-text">1.3. User Space &amp; Kernel Space Thread Mapping</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-LinuxThreads"><span class="nav-text">2. LinuxThreads</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-Managed-Thread"><span class="nav-text">2.1. Managed Thread</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-therad-id和process-id"><span class="nav-text">2.2. therad id和process id</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-signal-amp-同步"><span class="nav-text">2.3. signal &amp; 同步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-其他问题"><span class="nav-text">2.4. 其他问题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-NPTL"><span class="nav-text">3. NPTL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-futex-Fast-userspace-mutex"><span class="nav-text">3.1. futex (Fast userspace mutex)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-pid-amp-tgid"><span class="nav-text">3.2. pid &amp; tgid</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Leo Zhou</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">13</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Zhou</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -164,6 +164,143 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/12/Linux-Thead-Model-and-Impl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/01/12/Linux-Thead-Model-and-Impl/" class="post-title-link" itemprop="url">Linux Thead Model and Impl</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2020-01-12 23:00:24 / Modified: 23:00:44" itemprop="dateCreated datePublished" datetime="2020-01-12T23:00:24+08:00">2020-01-12</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><ul>
+<li><a href="https://landley.net/kdocs/ols/2002/ols2002-pages-330-337.pdf" target="_blank" rel="noopener">POSIX Threads and the Linux Kernel</a></li>
+<li><a href="http://www.cs.unc.edu/~porter/courses/cse506/f12/slides/nptl.pdf" target="_blank" rel="noopener">Native POSIX Thread Library (NPTL): CSE 506 Don Porter </a></li>
+<li><a href="https://yq.aliyun.com/articles/6043" target="_blank" rel="noopener">linux futex浅析</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/linux/kernel/l-thread/index.html" target="_blank" rel="noopener">Linux Kernel 2.4 线程实现机制分析</a></li>
+<li><a href="https://eli.thegreenplace.net/2018/basics-of-futexes/" target="_blank" rel="noopener">Basics of Futexes</a></li>
+<li><a href="https://lwn.net/Articles/360699/" target="_blank" rel="noopener">A futex overview and update</a></li>
+<li><a href="https://filippo.io/linux-syscall-table/" target="_blank" rel="noopener">Searchable Linux Syscall Table for x86 and x86_64</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/linux/l-synch/part1/index.html" target="_blank" rel="noopener">Linux 内核的同步机制，第 1 部分</a></li>
+</ul>
+<h1 id="1-POSIX-Threads-Model"><a href="#1-POSIX-Threads-Model" class="headerlink" title="1. POSIX Threads Model"></a>1. POSIX Threads Model</h1><h2 id="1-1-Definitions"><a href="#1-1-Definitions" class="headerlink" title="1.1. Definitions"></a>1.1. Definitions</h2><ul>
+<li>Process: 主要关注在resource上面<ul>
+<li>an address space and a group of resources all dedicated to running that program.</li>
+</ul>
+</li>
+<li>Thread: 主要是一个process包含多个threads<ul>
+<li>the resources necessary to represent that single thread of execution. </li>
+</ul>
+</li>
+</ul>
+<h2 id="1-2-POSIX-Thread-Model-vs-Linux-Task-Model"><a href="#1-2-POSIX-Thread-Model-vs-Linux-Task-Model" class="headerlink" title="1.2. POSIX Thread Model vs Linux Task Model"></a>1.2. POSIX Thread Model vs Linux Task Model</h2><ul>
+<li>类似黑名单，POSIX中大部分resource是一个process中所有thread shared，除了：<ul>
+<li>CPU registers</li>
+<li>User stack</li>
+<li>Blocked signal mask</li>
+</ul>
+</li>
+<li>而linux类似白名单，大部分resource都是thread独占的，除了：<ul>
+<li>Address space</li>
+<li>Signal handlers</li>
+<li>Open files</li>
+<li>Working directory</li>
+</ul>
+</li>
+</ul>
+<p>在这种情况下，POSIX的thread模型和linux的thread模型会有互相不兼容的问题，最明显的一个就是关于PID，PPID，credentials (user ID, group ID, etc), and pending signal mask.</p>
+<p>换句话说，POSIX中一个process的所有thread是共享一个pid的，但是在linux中，这些所有的thread都有自己独立的pid。</p>
+<p>这又进一步的带来了另外的问题，POSIX关于某个pid的操作是对于整个process而言的。无论是signal, exit, suspend/resume或者shared memory(address)的detach，在POSIX中都是对于一个process中的所有thread的集体操作。</p>
+<p>但是在linux中，这些操作都是对于单个thread的操作，和整体process关系不直接关联。</p>
+<h2 id="1-3-User-Space-amp-Kernel-Space-Thread-Mapping"><a href="#1-3-User-Space-amp-Kernel-Space-Thread-Mapping" class="headerlink" title="1.3. User Space &amp; Kernel Space Thread Mapping"></a>1.3. User Space &amp; Kernel Space Thread Mapping</h2><ul>
+<li>M:1, 问题在于只有一个kernel thread，一旦被阻塞就整体玩完</li>
+<li>1:1, 最容易实现，性能有牺牲，特别是context switch</li>
+<li>M:N，多线程情况下性能能够达到最优，但是实现复杂</li>
+</ul>
+<h1 id="2-LinuxThreads"><a href="#2-LinuxThreads" class="headerlink" title="2. LinuxThreads"></a>2. LinuxThreads</h1><p>LinuxThreads模型使用1:1的模型，但是和POSIX lib的不兼容，因此一个能在POSIX规范中能够运行的binary，不一定能在LinuxThreads lib中正常运行。</p>
+<p>LinuxThreads另外一个特点是有一个Manager Thread。</p>
+<h2 id="2-1-Managed-Thread"><a href="#2-1-Managed-Thread" class="headerlink" title="2.1. Managed Thread"></a>2.1. Managed Thread</h2><p>除了线程调度(1:1模型直接有kernel完成)，其他诸如线程取消、线程间的同步等工作，都是在核外(User Space)线程库中完成的，由Manager Thread负责。</p>
+<p>Manager Thread使用pipe管道来和其他线程进行通讯。管理线程的栈和用户线程的栈是分离的，管理线程在进程堆中通过malloc()分配一个THREAD_MANAGER_STACK_SIZE字节的区域作为自己的运行栈。</p>
+<p>管理线程容易成为瓶颈，这是这种结构的通病；同时，管理线程又负责用户线程的清理工作，因此，尽管管理线程已经屏蔽了大部分的信号，但一旦管理线程死亡，用户线程就不得不手工清理了，而且用户线程并不知道管理线程的状态，之后的线程创建等请求将无人处理。</p>
+<h2 id="2-2-therad-id和process-id"><a href="#2-2-therad-id和process-id" class="headerlink" title="2.2. therad id和process id"></a>2.2. therad id和process id</h2><p>每个LinuxThreads线程都同时具有线程id和进程id，其中进程id就是内核所维护的进程号，而线程id则由LinuxThreads分配和维护。值得注意的是每一个thread都有自己的tid(unique in process)和pid(unique in whole os)</p>
+<p>因此LinuxThreads的clone函数，对于CLONE_PID没有符合POSIX要求。另外，线程的数量被限制在1024，另外还会收到全局process可用数目的限制，因为这个thread其实就是一个process。</p>
+<h2 id="2-3-signal-amp-同步"><a href="#2-3-signal-amp-同步" class="headerlink" title="2.3. signal &amp; 同步"></a>2.3. signal &amp; 同步</h2><p>LinuxThread中的同步依赖于信号，当接受到一个kill signal之后，manager thread会将其转发给所有其他的thread。同时因为没有线程组的概念，因此其他signal的发送都是对于单一thread的操作。</p>
+<p>LinuxThreads将使用SIGUSR1和SIGUSR2作为内部使用的restart和cancel信号，这样应用程序就不能使用这两个原本为用户保留的信号了。</p>
+<h2 id="2-4-其他问题"><a href="#2-4-其他问题" class="headerlink" title="2.4. 其他问题"></a>2.4. 其他问题</h2><p>还有一些其他和POSIX线程有关的调用LinuxThreads，比如nice、setuid、setrlimit等，都是不兼容POSIX的，只针对一个thread有效果。</p>
+<h1 id="3-NPTL"><a href="#3-NPTL" class="headerlink" title="3. NPTL"></a>3. NPTL</h1><p>2.6版本以后，linux kernel引入了和POSIX兼容的NPTL(Native POSIX Thread Library)多线程库。NPTL也是1:1的user和kernel space thread mapping。</p>
+<h2 id="3-1-futex-Fast-userspace-mutex"><a href="#3-1-futex-Fast-userspace-mutex" class="headerlink" title="3.1. futex (Fast userspace mutex)"></a>3.1. futex (Fast userspace mutex)</h2><p>NPTL同时引入了futex，提供了一种用户thread的同步方式，具体包括了如下的特点：</p>
+<ul>
+<li>首先尝试在user space使用atomic的方法来快速加锁。在大部分时间，类似java的light lock，能够快速的加锁。</li>
+<li>如果加锁失败，那么thread可以尝试：<ul>
+<li>在原地spinning，等待lock free</li>
+<li>调用syscal futex来加锁，这时候需要陷入linux kernel；futex加锁依是针对address的。</li>
+</ul>
+</li>
+</ul>
+<p>另外futex可以用来semaphores和mutex。</p>
+<p>更加详细的syscall的列表可以在<code>/include/uapi/asm-generic/unistd.h</code>中找到。</p>
+<h2 id="3-2-pid-amp-tgid"><a href="#3-2-pid-amp-tgid" class="headerlink" title="3.2. pid &amp; tgid"></a>3.2. pid &amp; tgid</h2><p>首先需要注意的是，两个不同的操作的结果：</p>
+<ul>
+<li>fork : 产生一个新的process</li>
+<li>pthread_create : 产生一个新的thread</li>
+</ul>
+<p>但实际上fork和pthread_create都会调用到do_fork，因此所有的process都会有pid，tgid和ppid。</p>
+<p>另外需要注意的是，即使在NPTL情况下，每一个thread实际还是lwp(light weight process)。</p>
+<ul>
+<li>pid: process(thread)的id，每一个thread/process都不一样，全局唯一</li>
+<li>ppid: 创建process(thread)的parent process的pid</li>
+<li>tgid(thread group id): 所有在同一个线程组中共享的id，对于线程组leader而言有pid = tgid</li>
+</ul>
+<p>NPTL为了兼容POSIX的操作，getpid或者对于process的操作会返回tgid或者对于所有包含相同tgid的process的操作。<br>因此，其实linux kernel内部会有两套对于process/thread操作：一套是对于tgid，一套是真实对于单个thread的。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/05/UTLK-Chapter-2-%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1841,147 +1978,6 @@ H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保�
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Leo Zhou">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="梅子黄时雨">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2019/11/17/RISC-V-%E5%AF%84%E5%AD%98%E5%99%A8-overview/" class="post-title-link" itemprop="url">RISC-V 寄存器 overview</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2019-11-17 00:11:47 / Modified: 10:24:52" itemprop="dateCreated datePublished" datetime="2019-11-17T00:11:47+08:00">2019-11-17</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-Overview"><a href="#1-Overview" class="headerlink" title="1. Overview"></a>1. Overview</h1><p>RISC-V顾名思义是一个RISC指令集，有一些特性（特别和x86相比）：</p>
-<ul>
-<li>大量的寄存器</li>
-<li>固定为0的寄存器(x0): “零寄存器”（zero register，注：其值永远为零）</li>
-<li>非load和save指令不能访问内存，只能在寄存器间操作</li>
-<li>不提供context save和restore的命令</li>
-<li>所有指令都是固定长度的32bit</li>
-</ul>
-<p>指令长度固定32bit使得处理64bit的立即数，一定至少要两条指令。</p>
-<h2 id="1-1-指令集和拓展"><a href="#1-1-指令集和拓展" class="headerlink" title="1.1. 指令集和拓展"></a>1.1. 指令集和拓展</h2><p>RISC-V指令集最基本的指令只包含integer instruction，包括RV32I和RV64I。其中RV32I是社区声明过已经冻结修改的。（其实RV64I算是拓展，而且也被冻结了）</p>
-<p>具体的指令情况如下（来自维基百科）：</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>指令集名称</th>
-<th>描述</th>
-<th>版本</th>
-<th>状态</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>基本指令集</td>
-</tr>
-<tr>
-<td>RV32I</td>
-<td>基本整数指令集, 32位</td>
-<td>2.0</td>
-<td>冻结</td>
-</tr>
-<tr>
-<td>RV32E</td>
-<td>基本整数指令集(嵌入式系统), 32位, 16 寄存器</td>
-<td>1.9</td>
-<td>开放</td>
-</tr>
-<tr>
-<td>RV64I</td>
-<td>基本整数指令集, 64位</td>
-<td>2.0</td>
-<td>冻结</td>
-</tr>
-<tr>
-<td>RV128I</td>
-<td>基本整数指令集, 128位</td>
-<td>1.7</td>
-<td>开放</td>
-</tr>
-<tr>
-<td>标准扩展指令集</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>M|整数乘除法标准扩展|2.0|冻结<br>A|不可中断指令(Atomic)标准扩展|2.0|冻结<br>F|单精确度浮点运算标准扩展|2.0|冻结<br>D|双倍精确度浮点运算标准扩展|2.0|冻结<br>G|所有以上的扩展指令集以及基本指令集的总和的简称|不适用|不适用<br>Q|四倍精确度浮点运算标准扩展|2.0|冻结<br>L|十进制浮点运算标准扩展|0.0|开放<br>C|压缩指令标准扩展|2.0|冻结<br>B|位操作标准扩展|0.36|开放<br>J|动态指令翻译标准扩展|0.0|开放<br>T|顺序存储器访问标准扩展|0.0|开放<br>P|单指令多数据流（SIMD）运算标准扩展|0.1|开放<br>V|向量运算标准扩展|0.2|开放<br>N|用户中断标准扩展|1.1|开放</p>
-<h1 id="2-Register"><a href="#2-Register" class="headerlink" title="2. Register"></a>2. Register</h1><p>基础的寄存器包括32个整数寄存器（嵌入式版本是16个整数寄存器），也就是RV32I的寄存器，x0-x31。其中x0是固定为0的寄存器，而因为寄存器够用，所以没有单独的Stack寄存器。</p>
-<p>引入RV32F和RV32D会引入32个浮点寄存器，f0-f31。</p>
-<p>RISC-V的ABI中定义了各个寄存器的calling convension：</p>
-<div class="table-container">
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>ABI Name</th>
-<th>Description</th>
-<th>Saver</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>x0| zero |Hard-wired zero |—<br>x1 |ra |Return address |Caller<br>x2 |sp |Stack pointer |Callee<br>x3 |gp |Global pointer |—<br>x4 |tp |Thread pointer |—<br>x5–7 |t0–2 |Temporaries |Caller<br>x8 |s0/fp |Saved register/frame pointer |Callee<br>x9 |s1 |Saved register |Callee<br>x10–11 |a0–1 |Function arguments/return values |Caller<br>x12–17 |a2–7 |Function arguments |Caller<br>x18–27 |s2–11 |Saved registers |Callee<br>x28–31 |t3–6 |Temporaries |Caller<br>f0–7 |ft0–7 |FP temporaries |Caller<br>f8–9 |fs0–1 |FP saved registers |Callee<br>f10–11 |fa0–1 |FP arguments/return values |Caller<br>f12–17 |fa2–7 |FP arguments |Caller<br>f18–27 |fs2–11 |FP saved registers |Callee<br>f28–31 |ft8–11 |FP temporaries |Caller</p>
-<h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><p>参考：</p>
-<ul>
-<li><a href="http://crva.io/documents/RISC-V-Reader-Chinese-v2p1.pdf" target="_blank" rel="noopener">RISC-V 手册</a></li>
-<li><a href="https://zh.wikipedia.org/wiki/RISC-V" target="_blank" rel="noopener">维基百科: RISC-V</a></li>
-<li><a href="https://github.com/cnrv/riscv-soc-book" target="_blank" rel="noopener">关于RISC-V你所需要知道的一切 Github</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -2052,12 +2048,12 @@ H = \frac{log_{[m/2]}(N+1)}{2}</script><p>注意一棵b树的每个节点既保�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">12</span>
+          <span class="site-state-item-count">13</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">19</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
