@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    hostname: new URL('http://yoursite.com').hostname,
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.6.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    comments: {"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}
+  };
+</script>
+
+  <meta name="description" content="Reference O(n)、O(1)和CFS调度器 There’s A New Linux CPU Scheduler Based Upon BFS  1. task_structstruct task_struct定义在include&#x2F;linux&#x2F;sched.h中： 123456789struct task_struct &amp;#123;#ifdef CONFIG_THREAD_INFO_IN_T">
+<meta name="keywords" content="Linux,Kernel,Memory">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UTLK: Chapter 3 (1)">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;01&#x2F;17&#x2F;UTLK-Chapter-3-1&#x2F;index.html">
+<meta property="og:site_name" content="梅子黄时雨">
+<meta property="og:description" content="Reference O(n)、O(1)和CFS调度器 There’s A New Linux CPU Scheduler Based Upon BFS  1. task_structstruct task_struct定义在include&#x2F;linux&#x2F;sched.h中： 123456789struct task_struct &amp;#123;#ifdef CONFIG_THREAD_INFO_IN_T">
+<meta property="og:locale" content="en">
+<meta property="og:updated_time" content="2020-01-17T14:06:44.016Z">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/01/17/UTLK-Chapter-3-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>UTLK: Chapter 3 (1) | 梅子黄时雨</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">梅子黄时雨</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="en">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/01/17/UTLK-Chapter-3-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Leo Zhou">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="梅子黄时雨">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          UTLK: Chapter 3 (1)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2020-01-17 22:05:26 / Modified: 22:06:44" itemprop="dateCreated datePublished" datetime="2020-01-17T22:05:26+08:00">2020-01-17</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h1><ul>
+<li><a href="http://www.wowotech.net/process_management/scheduler-history.html" target="_blank" rel="noopener">O(n)、O(1)和CFS调度器</a></li>
+<li><a href="https://www.phoronix.com/scan.php?page=news_item&amp;px=MTI1MzY" target="_blank" rel="noopener">There’s A New Linux CPU Scheduler Based Upon BFS</a></li>
+</ul>
+<h1 id="1-task-struct"><a href="#1-task-struct" class="headerlink" title="1. task_struct"></a>1. task_struct</h1><p>struct task_struct定义在<code>include/linux/sched.h</code>中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">struct task_struct &#123;</span><br><span class="line">#ifdef CONFIG_THREAD_INFO_IN_TASK</span><br><span class="line">	/*</span><br><span class="line">	 * For reasons of header soup (see current_thread_info()), this</span><br><span class="line">	 * must be the first element of task_struct.</span><br><span class="line">	 */</span><br><span class="line">	struct thread_info		thread_info;</span><br><span class="line">#endif</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>这里这么说的缘故是，current_thread_info的通用定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#ifdef CONFIG_THREAD_INFO_IN_TASK</span><br><span class="line">/*</span><br><span class="line"> * For CONFIG_THREAD_INFO_IN_TASK kernels we need &lt;asm/current.h&gt; for the</span><br><span class="line"> * definition of current, but for !CONFIG_THREAD_INFO_IN_TASK kernels,</span><br><span class="line"> * including &lt;asm/current.h&gt; can cause a circular dependency on some platforms.</span><br><span class="line"> */</span><br><span class="line">#include &lt;asm/current.h&gt;</span><br><span class="line">#define current_thread_info() ((struct thread_info *)current)</span><br><span class="line">#endif</span><br></pre></td></tr></table></figure>
+<p>直接通过真专的转换来完成的，因此需要将thread_info放置在struct头部。</p>
+<h2 id="1-1-struct-thread-info"><a href="#1-1-struct-thread-info" class="headerlink" title="1.1. struct thread_info"></a>1.1. struct thread_info</h2><p>每个arch都有不同的定义。</p>
+<p>x86:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">struct thread_info &#123;</span><br><span class="line">	unsigned long		flags;		/* low level flags */</span><br><span class="line">	u32			status;		/* thread synchronous flags */</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>ARM：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * low level task data that entry.S needs immediate access to.</span><br><span class="line"> * __switch_to() assumes cpu_context follows immediately after cpu_domain.</span><br><span class="line"> */</span><br><span class="line">struct thread_info &#123;</span><br><span class="line">	unsigned long		flags;		/* low level flags */</span><br><span class="line">	int			preempt_count;	/* 0 =&gt; preemptable, &lt;0 =&gt; bug */</span><br><span class="line">	mm_segment_t		addr_limit;	/* address limit */</span><br><span class="line">	struct task_struct	*task;		/* main task structure */</span><br><span class="line">	__u32			cpu;		/* cpu */</span><br><span class="line">	__u32			cpu_domain;	/* cpu domain */</span><br><span class="line">#ifdef CONFIG_STACKPROTECTOR_PER_TASK</span><br><span class="line">	unsigned long		stack_canary;</span><br><span class="line">#endif</span><br><span class="line">	struct cpu_context_save	cpu_context;	/* cpu context */</span><br><span class="line">	__u32			syscall;	/* syscall number */</span><br><span class="line">	__u8			used_cp[16];	/* thread used copro */</span><br><span class="line">	unsigned long		tp_value[2];	/* TLS registers */</span><br><span class="line">#ifdef CONFIG_CRUNCH</span><br><span class="line">	struct crunch_state	crunchstate;</span><br><span class="line">#endif</span><br><span class="line">	union fp_state		fpstate __attribute__((aligned(8)));</span><br><span class="line">	union vfp_state		vfpstate;</span><br><span class="line">#ifdef CONFIG_ARM_THUMBEE</span><br><span class="line">	unsigned long		thumbee_state;	/* ThumbEE Handler Base register */</span><br><span class="line">#endif</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>ARM64</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * low level task data that entry.S needs immediate access to.</span><br><span class="line"> */</span><br><span class="line">struct thread_info &#123;</span><br><span class="line">	unsigned long		flags;		/* low level flags */</span><br><span class="line">	mm_segment_t		addr_limit;	/* address limit */</span><br><span class="line">#ifdef CONFIG_ARM64_SW_TTBR0_PAN</span><br><span class="line">	u64			ttbr0;		/* saved TTBR0_EL1 */</span><br><span class="line">#endif</span><br><span class="line">	union &#123;</span><br><span class="line">		u64		preempt_count;	/* 0 =&gt; preemptible, &lt;0 =&gt; bug */</span><br><span class="line">		struct &#123;</span><br><span class="line">#ifdef CONFIG_CPU_BIG_ENDIAN</span><br><span class="line">			u32	need_resched;</span><br><span class="line">			u32	count;</span><br><span class="line">#else</span><br><span class="line">			u32	count;</span><br><span class="line">			u32	need_resched;</span><br><span class="line">#endif</span><br><span class="line">		&#125; preempt;</span><br><span class="line">	&#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>RISC-V</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * low level task data that entry.S needs immediate access to</span><br><span class="line"> * - this struct should fit entirely inside of one cache line</span><br><span class="line"> * - if the members of this struct changes, the assembly constants</span><br><span class="line"> *   in asm-offsets.c must be updated accordingly</span><br><span class="line"> * - thread_info is included in task_struct at an offset of 0.  This means that</span><br><span class="line"> *   tp points to both thread_info and task_struct.</span><br><span class="line"> */</span><br><span class="line">struct thread_info &#123;</span><br><span class="line">	unsigned long		flags;		/* low level flags */</span><br><span class="line">	int                     preempt_count;  /* 0=&gt;preemptible, &lt;0=&gt;BUG */</span><br><span class="line">	mm_segment_t		addr_limit;</span><br><span class="line">	/*</span><br><span class="line">	 * These stack pointers are overwritten on every system call or</span><br><span class="line">	 * exception.  SP is also saved to the stack it can be recovered when</span><br><span class="line">	 * overwritten.</span><br><span class="line">	 */</span><br><span class="line">	long			kernel_sp;	/* Kernel stack pointer */</span><br><span class="line">	long			user_sp;	/* User stack pointer */</span><br><span class="line">	int			cpu;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>x86竟然出奇的简单，剩下的arch都带有各种其他信息，不确定这里的信息只是作为display还是会参与到进程调度中。</p>
+<h2 id="1-2-process-state"><a href="#1-2-process-state" class="headerlink" title="1.2. process state"></a>1.2. process state</h2><p>state定义很简单，是一个long：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/* -1 unrunnable, 0 runnable, &gt;0 stopped: */</span><br><span class="line">volatile long			state;</span><br></pre></td></tr></table></figure>
+<p>这里的state可以作为一个flag的组合存在，因此state分成几类。</p>
+<p>2.6.19 kernel:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#define TASK_RUNNING		0</span><br><span class="line">#define TASK_INTERRUPTIBLE	1</span><br><span class="line">#define TASK_UNINTERRUPTIBLE	2</span><br><span class="line">#define TASK_STOPPED		4</span><br><span class="line">#define TASK_TRACED		8</span><br><span class="line">#define EXIT_ZOMBIE		16</span><br><span class="line">#define EXIT_DEAD		32</span><br></pre></td></tr></table></figure>
+<p>以上是比较通用的几个，在后续的版本中加入了更多的状态，比如 5.4.rc kernel（在3.14 kernel以后加入）:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">/* Used in tsk-&gt;state: */</span><br><span class="line">#define TASK_RUNNING			0x0000</span><br><span class="line">#define TASK_INTERRUPTIBLE		0x0001</span><br><span class="line">#define TASK_UNINTERRUPTIBLE		0x0002</span><br><span class="line">#define __TASK_STOPPED			0x0004</span><br><span class="line">#define __TASK_TRACED			0x0008</span><br><span class="line">/* Used in tsk-&gt;exit_state: */</span><br><span class="line">#define EXIT_DEAD			0x0010</span><br><span class="line">#define EXIT_ZOMBIE			0x0020</span><br><span class="line">#define EXIT_TRACE			(EXIT_ZOMBIE | EXIT_DEAD)</span><br><span class="line">/* Used in tsk-&gt;state again: */</span><br><span class="line">#define TASK_PARKED			0x0040</span><br><span class="line">#define TASK_DEAD			0x0080</span><br><span class="line">#define TASK_WAKEKILL			0x0100</span><br><span class="line">#define TASK_WAKING			0x0200</span><br><span class="line">#define TASK_NOLOAD			0x0400</span><br><span class="line">#define TASK_NEW			0x0800</span><br><span class="line">#define TASK_STATE_MAX			0x1000</span><br></pre></td></tr></table></figure>
+<h3 id="1-2-1-TASK-PARKED"><a href="#1-2-1-TASK-PARKED" class="headerlink" title="1.2.1. TASK_PARKED"></a>1.2.1. TASK_PARKED</h3><p>主要是为了cpu hotplug引入的，以后再详细分析。</p>
+<h2 id="1-2-Thread-stack"><a href="#1-2-Thread-stack" class="headerlink" title="1.2. Thread stack"></a>1.2. Thread stack</h2><p>每一个user thread都有两个stack：user space stack和kernel space stack。</p>
+<p>stack的为一个thread_union，注意它是从高地址往低地址生长的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">union thread_union &#123;</span><br><span class="line">#ifndef CONFIG_ARCH_TASK_STRUCT_ON_STACK</span><br><span class="line">	struct task_struct task;</span><br><span class="line">#endif</span><br><span class="line">#ifndef CONFIG_THREAD_INFO_IN_TASK</span><br><span class="line">	struct thread_info thread_info;</span><br><span class="line">#endif</span><br><span class="line">	unsigned long stack[THREAD_SIZE/sizeof(long)];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这里的THREAD_SIZE是arch spcified：</p>
+<ul>
+<li>x86(32bit): PAGE_SIZE &lt;&lt; 1 = 2 * PAGE_SIZE</li>
+<li>x64(64bit): PAGE_SIZE &lt;&lt; 2 = 4 * PAGE_SIZE</li>
+<li>ARM &amp; ARM64: 2 * PAGE_SIZE</li>
+<li>RISC-V: 2 * PAGE_SIZE</li>
+</ul>
+<p>x64比较特殊，stack size是4个page size。具体两个stack是如何，在何时分配，如果切换后面在讨论。</p>
+<h2 id="1-3-Process-Scheduler"><a href="#1-3-Process-Scheduler" class="headerlink" title="1.3. Process Scheduler"></a>1.3. Process Scheduler</h2><p>历史上有过很多的Process Scheduler的实现，有些被接收到了linux kernel官方code中，有些被引入linux kernel的衍生版本：</p>
+<ul>
+<li>global runqueue: O(n)，使用两个queue，一个保存待运行，一个保存消耗完时间片，主要问题在于插入process到有序的queue中很耗时间</li>
+<li>O(1) scheduler:2.6.0提出，在2.6.23后被CFS替换掉。<ul>
+<li>使用两组(current/expired)140个priority array来保存各种不同的优先级的process</li>
+<li>使用两个bitmap来分别表明current/expired中每个array是否还有process</li>
+<li>找下一个运行的process就变成了搜索bit map的最地位的1所在位置，对应到相应的priority array</li>
+<li>current bitmap consumed以后可以交换current/expired array/bitmap的位置</li>
+</ul>
+</li>
+<li>RSDL(Rotating Staircase Deadline Scheduler): Con Kolivas提出，单和CFS竞争失败，没有merge到官方linux kernel，一度愤而离开linux kernel开发<ul>
+<li>也是2组140个priority array，但是每个process固定运行6ms，结束后放置到低一级array中(比如120 -&gt; 121)；最后从139 array出来后，放入expired array组相应的priority的array</li>
+</ul>
+</li>
+<li>CFS(Completely Fair Schedulder): 2.6.23同时还引入了模块化的scheduler设计<ul>
+<li>模块分成两层<ul>
+<li>core scheduler layer -&gt; 负责负载均衡的讲task分配到每一个cpu core的runqueue上</li>
+<li>specific scheduler layer -&gt; 自定义的针对不同场景，对于单个core的scheduler</li>
+</ul>
+</li>
+<li>CFS使用红黑树来记录某个process的运行优先级，每个node代表一个process<ul>
+<li>红黑树的key用vruntime，vruntime(virual runtime)的增加取决于process优先级，级别越高，增长越慢</li>
+<li>process运行都会增加vruntime，结束时候然后插回红黑树</li>
+<li>每次从红黑树取最小vruntime的process运行</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Brain Fuck Scheduler (BFS) schulder：又是Con Kolivas提出，依然没有被merge到官方linux kernel source code。<ul>
+<li>可以从<a href="http://ck.kolivas.org/拿到对应实现的patch，apply到你的linux" target="_blank" rel="noopener">http://ck.kolivas.org/拿到对应实现的patch，apply到你的linux</a> kernel中</li>
+<li>BFS使用单一链表保存所有process，记录vruntime和last run CPU</li>
+<li>每一次schedule需要对整个列表进行扫描，因此是O(n)</li>
+<li>不过在桌面级别使用，process数量不多，也就无所谓了</li>
+</ul>
+</li>
+</ul>
+<h2 id="1-4-PID-quick-search"><a href="#1-4-PID-quick-search" class="headerlink" title="1.4. PID quick search"></a>1.4. PID quick search</h2><p>为了加快各种pid的索引，几种hashtable被引入，加快索引，这些pid的索引包括：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">enum pid_type</span><br><span class="line">&#123;</span><br><span class="line">	PIDTYPE_PID,       // pid of process</span><br><span class="line">	PIDTYPE_TGID,      // pid of thread group leader process</span><br><span class="line">	PIDTYPE_PGID,      // pid of the group leader process</span><br><span class="line">	PIDTYPE_SID,       // pid of the session leader proess</span><br><span class="line">	PIDTYPE_MAX</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>在引入idr之前，这个hashtable定义在<code>kernel/pid.c</code>中，使用<code>pidhash_init</code>函数进行初始化：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">static struct hlist_head *pid_hash[PIDTYPE_MAX];</span><br></pre></td></tr></table></figure>
+<p>结合hashmap，每一个task_struct中都包含了一个pid的数组：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/* PID/PID hash table linkage. */</span><br><span class="line">struct pid pids[PIDTYPE_MAX];</span><br></pre></td></tr></table></figure>
+<p>这里的struct pid关联了两个链表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">struct pid</span><br><span class="line">&#123;</span><br><span class="line">	/* Try to keep pid_chain in the same cacheline as nr for find_pid */</span><br><span class="line">	int nr;</span><br><span class="line">	struct hlist_node pid_chain;</span><br><span class="line">	/* list of pids with the same nr, only one of them is in the hash */</span><br><span class="line">	struct list_head pid_list;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>所有的hash内容指向了这样一个pid，而pid中的pid_chain指向hashtable中得到相同hash值的其他pid；而pid_list指向其他符合这个条件的task_struct中的pid。</p>
+<p>在4.15-rc1中，引入了idr来代替pid bitmap；同时，用于记录pid信息的hashtable也被移除，相关的逻辑放入到了pid struct中：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">struct pid</span><br><span class="line">&#123;</span><br><span class="line">	atomic_t count;</span><br><span class="line">	unsigned int level;</span><br><span class="line">	/* lists of tasks that use this pid */</span><br><span class="line">	struct hlist_head tasks[PIDTYPE_MAX];   // 记录use这个pid作为tgid，pgid的所有process列表</span><br><span class="line">	struct rcu_head rcu;</span><br><span class="line">	struct upid numbers[1];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>因此，此时寻/搜索找某个pid作为各种角色processes时候，就变成使用idr找到对应的pid struct，然后从pid-&gt;tasks中取到需要的<br>process list。</p>
+<p>tasks的初始化在pid被alloc时候进行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct pid *alloc_pid(struct pid_namespace *ns) &#123;</span><br><span class="line">    ...</span><br><span class="line">	for (type = 0; type &lt; PIDTYPE_MAX; ++type)</span><br><span class="line">		INIT_HLIST_HEAD(&amp;pid-&gt;tasks[type]);</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>详细逻辑在PID分配中解释。</p>
+<h2 id="1-5-PID-分配"><a href="#1-5-PID-分配" class="headerlink" title="1.5. PID 分配"></a>1.5. PID 分配</h2><p>在64bit情况下，linux可以分配的pid个数有400多万个(4 <em> 1024 </em> 1024);否则只有32768 (8 * 4096)个：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * This controls the default maximum pid allocated to a process</span><br><span class="line"> */</span><br><span class="line">#define PID_MAX_DEFAULT (CONFIG_BASE_SMALL ? 0x1000 : 0x8000)</span><br><span class="line"></span><br><span class="line">/*</span><br><span class="line"> * A maximum of 4 million PIDs should be enough for a while:</span><br><span class="line"> */</span><br><span class="line">#define PID_MAX_LIMIT (CONFIG_BASE_SMALL ? PAGE_SIZE * 8 : \</span><br><span class="line">	(sizeof(long) &gt; 4 ? 4 * 1024 * 1024 : PID_MAX_DEFAULT))</span><br></pre></td></tr></table></figure>
+<p>2.6.13和最新的5.5版本都是如此。只是如何进行分配的逻辑有所改动。</p>
+<h3 id="1-5-1-pidmap分配：2-6-13"><a href="#1-5-1-pidmap分配：2-6-13" class="headerlink" title="1.5.1. pidmap分配：2.6.13"></a>1.5.1. pidmap分配：2.6.13</h3><p>使用bitmap来记录是否pid已经被分配了：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * PID-map pages start out as NULL, they get allocated upon</span><br><span class="line"> * first use and are never deallocated. This way a low pid_max</span><br><span class="line"> * value does not cause lots of bitmaps to be allocated, but</span><br><span class="line"> * the scheme scales to up to 4 million PIDs, runtime.</span><br><span class="line"> */</span><br><span class="line">typedef struct pidmap &#123;</span><br><span class="line">	atomic_t nr_free;</span><br><span class="line">	void *page;</span><br><span class="line">&#125; pidmap_t;</span><br><span class="line"></span><br><span class="line">static pidmap_t pidmap_array[PIDMAP_ENTRIES] =</span><br><span class="line">	 &#123; [ 0 ... PIDMAP_ENTRIES-1 ] = &#123; ATOMIC_INIT(BITS_PER_PAGE), NULL &#125; &#125;;</span><br><span class="line">	 </span><br><span class="line">#define PIDMAP_ENTRIES		((PID_MAX_LIMIT + 8*PAGE_SIZE - 1)/PAGE_SIZE/8)</span><br><span class="line">#define BITS_PER_PAGE		(PAGE_SIZE*8)</span><br><span class="line">#define BITS_PER_PAGE_MASK	(BITS_PER_PAGE-1)</span><br></pre></td></tr></table></figure>
+<p>pidmap_array的entry每一个负责8 <em> PAGE_SIZE的pid，因为一个byte包含了8bit，因此我们只需要<br>8 </em> PAGE_SIZe / 8 = PAGE_SIZE个bytes，刚好一个PAGE，因此，对于每一个pidmap中的page就是一个page。</p>
+<h3 id="1-5-2-idr分配：4-11-rc-kernel之前"><a href="#1-5-2-idr分配：4-11-rc-kernel之前" class="headerlink" title="1.5.2. idr分配：4.11-rc kernel之前"></a>1.5.2. idr分配：4.11-rc kernel之前</h3><p>参考：</p>
+<ul>
+<li><a href="https://lwn.net/Articles/103209/" target="_blank" rel="noopener">idr - integer ID management</a></li>
+<li><a href="https://www.cnblogs.com/linhaostudy/p/10535455.html" target="_blank" rel="noopener">linux内核IDR机制详解【转】</a></li>
+<li><a href="https://github.com/torvalds/linux/commit/0a835c4f090af2c76fc2932c539c3b32fd21fbbb" target="_blank" rel="noopener">Reimplement IDR and IDA using the radix tree</a></li>
+</ul>
+<p>idr内部使用了radix tree数据结构，在实现上面也有过一次reimplement(4.11-rc1)。</p>
+<p>在此之前idr的实现都在idr.h中，相关数据结构包括<code>struct idr_layer</code>和<code>struct idr</code>，具体实现可以参考<a href="https://www.cnblogs.com/linhaostudy/p/10535455.html" target="_blank" rel="noopener">linux内核IDR机制详解【转】</a>。</p>
+<p>在32bit时候，每级层表使用5bits，一共32个entry指向下一层layer；这么做的好处在于可以用一个32bit(long)来作为bitmap；而64bit中使用6bits每层表，也是一个long。不过实际上无论32bit和64bit，有效的位数只用了31bit。</p>
+<p>ida负责真正的分配id，其中包含了一个idr和另外的一个bitmap。</p>
+<h3 id="1-5-3-idr分配：4-11-rc-kernel改进"><a href="#1-5-3-idr分配：4-11-rc-kernel改进" class="headerlink" title="1.5.3. idr分配：4.11-rc kernel改进"></a>1.5.3. idr分配：4.11-rc kernel改进</h3><p>参考：</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/0a835c4f090af2c76fc2932c539c3b32fd21fbbb" target="_blank" rel="noopener">Reimplement IDR and IDA using the radix tree</a></li>
+<li><a href="https://www.slideshare.net/bsandhya512/implementing-idr-in-allocfd" target="_blank" rel="noopener">Implementing IDR in __alloc_fd()</a></li>
+</ul>
+<p>4.11-rc以后进行了reimplement, 直接使用内部的一个radix tree：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">struct idr &#123;</span><br><span class="line">	struct radix_tree_root	idr_rt;</span><br><span class="line">	unsigned int		idr_next;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * @count is the count of every non-NULL element in the -&gt;slots array</span><br><span class="line"> * whether that is an exceptional entry, a retry entry, a user pointer,</span><br><span class="line"> * a sibling entry or a pointer to the next level of the tree.</span><br><span class="line"> * @exceptional is the count of every element in -&gt;slots which is</span><br><span class="line"> * either radix_tree_exceptional_entry() or is a sibling entry for an</span><br><span class="line"> * exceptional entry.</span><br><span class="line"> */</span><br><span class="line">struct radix_tree_node &#123;</span><br><span class="line">	unsigned char	shift;		/* Bits remaining in each slot */</span><br><span class="line">	unsigned char	offset;		/* Slot offset in parent */</span><br><span class="line">	unsigned char	count;		/* Total entry count */</span><br><span class="line">	unsigned char	exceptional;	/* Exceptional entry count */</span><br><span class="line">	struct radix_tree_node *parent;		/* Used when ascending tree */</span><br><span class="line">	struct radix_tree_root *root;		/* The tree we belong to */</span><br><span class="line">	union &#123;</span><br><span class="line">		struct list_head private_list;	/* For tree user */</span><br><span class="line">		struct rcu_head	rcu_head;	/* Used when freeing node */</span><br><span class="line">	&#125;;</span><br><span class="line">	void __rcu	*slots[RADIX_TREE_MAP_SIZE];</span><br><span class="line">	unsigned long	tags[RADIX_TREE_MAX_TAGS][RADIX_TREE_TAG_LONGS];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>基本实现还是类似的，只是单独拎了出来；另外再晚一些的版本，radix_tree_node被定义成xa_node，基本定义保持一致：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/* Keep unconverted code working */</span><br><span class="line">#define radix_tree_root		xarray</span><br><span class="line">#define radix_tree_node		xa_node</span><br></pre></td></tr></table></figure>
+<h2 id="1-6-Namespace"><a href="#1-6-Namespace" class="headerlink" title="1.6. Namespace"></a>1.6. Namespace</h2><p>为了支持多层namespace(pid namespace本身是层级结构，一个process在同一层至多属于一个namespace node)，因此引入了upid的概念，记录每一层信息。</p>
+<p>具体参考<a href="http://www.wowotech.net/process_management/pid.html" target="_blank" rel="noopener">Linux系统如何标识进程？</a>。</p>
+<p>详细分析后续再做。。</p>
+<h2 id="1-7-Wait-Queue"><a href="#1-7-Wait-Queue" class="headerlink" title="1.7. Wait Queue"></a>1.7. Wait Queue</h2><p>Wait queue发生过一次rename来保证内部名字的一致性：<a href="https://github.com/torvalds/linux/commit/9d9d676f595b5081326be7a17dc681fcb38fb3b2" target="_blank" rel="noopener">sched/wait: Standardize internal naming of wait-queue heads</a></p>
+<p>大体上没有逻辑上的改变，只是名字改了。</p>
+<p>有意思的是，你可以创建n多个wait queue，linux kernel提供了相应的宏和函数来帮助你做这些事情。</p>
+<p>首先wait的queue的描述：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * A single wait-queue entry structure:</span><br><span class="line"> */</span><br><span class="line">struct wait_queue_entry &#123;</span><br><span class="line">	unsigned int		flags;</span><br><span class="line">	void			*private;</span><br><span class="line">	wait_queue_func_t	func;</span><br><span class="line">	struct list_head	entry;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">struct wait_queue_head &#123;</span><br><span class="line">	spinlock_t		lock;</span><br><span class="line">	struct list_head	head;</span><br><span class="line">&#125;;</span><br><span class="line">typedef struct wait_queue_head wait_queue_head_t;</span><br></pre></td></tr></table></figure>
+<p>然后通过宏初始化wait entry，调用函数加入wait queue：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">#define __WAITQUEUE_INITIALIZER(name, tsk) &#123;					\</span><br><span class="line">	.private	= tsk,							\</span><br><span class="line">	.func		= default_wake_function,				\</span><br><span class="line">	.entry		= &#123; NULL, NULL &#125; &#125;</span><br><span class="line"></span><br><span class="line">#define DECLARE_WAITQUEUE(name, tsk)						\</span><br><span class="line">	struct wait_queue_entry name = __WAITQUEUE_INITIALIZER(name, tsk)</span><br><span class="line"></span><br><span class="line">// 使用操作：</span><br><span class="line"></span><br><span class="line">DECLARE_WAITQUEUE(wait, current);</span><br><span class="line">set_current_state(TASK_INTERRUPTIBLE);</span><br><span class="line">add_wait_queue(&amp;ctx-&gt;ctx_zombieq, &amp;wait);</span><br></pre></td></tr></table></figure>
+<p>最后可以使用wake_up进行唤醒。</p>
+<h2 id="1-8-process-resource-limit"><a href="#1-8-process-resource-limit" class="headerlink" title="1.8. process resource limit"></a>1.8. process resource limit</h2><p>能够想到的资源控制包括两个方面：</p>
+<ul>
+<li>process本身的控制，定义在process的描述符中</li>
+<li>cgroup的资源控制，针对一个namespace而言的</li>
+</ul>
+<p>前者定义在task_struct -&gt; signal (struct signal_struct) -&gt; rlim<a href="struct rlimit">RLIM_NLIMITS</a></p>
+<p>其中struct rlimit定义如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">struct rlimit &#123;</span><br><span class="line">	__kernel_ulong_t	rlim_cur;</span><br><span class="line">	__kernel_ulong_t	rlim_max;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>RLIM_NLIMITS包含了一系列的资源，包括：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Field names</th>
+<th>Index</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RLIMIT_CPU</td>
+<td>0</td>
+<td>Process能运行的最多seconds，如果超过了这个时间，那么process会收到一个SIGXCPU signal，如果随后process还没terminated，那么会发送一个SIGKILL。</td>
+</tr>
+<tr>
+<td>RLIMIT_FSIZE</td>
+<td>1</td>
+<td>Process能用的最多file size，尝试超过额度分配时候会发送SIGXFSZ</td>
+</tr>
+<tr>
+<td>RLIMIT_DATA</td>
+<td>2</td>
+<td>Process能用的最多的heap size</td>
+</tr>
+<tr>
+<td>RLIMIT_STACK</td>
+<td>3</td>
+<td>max stack size</td>
+</tr>
+<tr>
+<td>RLIMIT_CORE</td>
+<td>4</td>
+<td>max core dump size</td>
+</tr>
+<tr>
+<td>RLIMIT_RSS</td>
+<td>5</td>
+<td>max number of page frames can be owned by one processs</td>
+</tr>
+<tr>
+<td>RLIMIT_NPROC</td>
+<td>6</td>
+<td>max number of process one user can own</td>
+</tr>
+<tr>
+<td>RLIMIT_NOFILE</td>
+<td>7</td>
+<td>max open file descriptor</td>
+</tr>
+<tr>
+<td>RLIMIT_MEMLOCK</td>
+<td>8</td>
+<td>max size of nonswappable memory, in bytes</td>
+</tr>
+<tr>
+<td>RLIMIT_AS</td>
+<td>9</td>
+<td>max process address space, in bytes. Kernel use malloc to check.</td>
+</tr>
+<tr>
+<td>RLIMIT_LOCKS</td>
+<td>10</td>
+<td>max number of file locks</td>
+</tr>
+<tr>
+<td>RLIMIT_SIGPENDING</td>
+<td>11</td>
+<td>max number of pending signals for the process</td>
+</tr>
+<tr>
+<td>RLIMIT_MSGQUEUE</td>
+<td>12</td>
+<td>max number of posix message queue</td>
+</tr>
+<tr>
+<td>RLIMIT_NICE</td>
+<td>13</td>
+<td>max nice prio allowed to raise to</td>
+</tr>
+<tr>
+<td>RLIMIT_RTPRIO</td>
+<td>14</td>
+<td>max realtime priority</td>
+</tr>
+<tr>
+<td>RLIMIT_RTTIME</td>
+<td>15</td>
+<td>timeout for RT tasks in us</td>
+</tr>
+<tr>
+<td>RLIM_NLIMITS</td>
+<td>16</td>
+<td>count of kinds of limit</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>许多resource超过limit时候会发送一个signal：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">static bool check_rlimit(u64 time, u64 limit, int signo, bool rt, bool hard)</span><br><span class="line">&#123;</span><br><span class="line">	if (time &lt; limit)</span><br><span class="line">		return false;</span><br><span class="line"></span><br><span class="line">	if (print_fatal_signals) &#123;</span><br><span class="line">		pr_info(&quot;%s Watchdog Timeout (%s): %s[%d]\n&quot;,</span><br><span class="line">			rt ? &quot;RT&quot; : &quot;CPU&quot;, hard ? &quot;hard&quot; : &quot;soft&quot;,</span><br><span class="line">			current-&gt;comm, task_pid_nr(current));</span><br><span class="line">	&#125;</span><br><span class="line">	__group_send_sig_info(signo, SEND_SIG_PRIV, current);</span><br><span class="line">	return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 比如对于cpu limit</span><br><span class="line"></span><br><span class="line">/* At the soft limit, send a SIGXCPU every second */</span><br><span class="line">if (check_rlimit(ptime, softns, SIGXCPU, false, false)) &#123;</span><br><span class="line">	sig-&gt;rlim[RLIMIT_CPU].rlim_cur = soft + 1;</span><br><span class="line">	softns += NSEC_PER_SEC;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>相应的控制函数包括：</p>
+<ul>
+<li>getrlimit</li>
+<li>setrlimit</li>
+</ul>
+<p>cgroup级别的resource控制，记录在于对应的cgroup之中，比如对于pid的限制，定义在struct pids_cgroup:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">struct pids_cgroup &#123;</span><br><span class="line">	struct cgroup_subsys_state	css;</span><br><span class="line"></span><br><span class="line">	/*</span><br><span class="line">	 * Use 64-bit types so that we can safely represent &quot;max&quot; as</span><br><span class="line">	 * %PIDS_MAX = (%PID_MAX_LIMIT + 1).</span><br><span class="line">	 */</span><br><span class="line">	atomic64_t			counter;</span><br><span class="line">	int64_t				limit;</span><br><span class="line"></span><br><span class="line">	/* Handle for &quot;pids.events&quot; */</span><br><span class="line">	struct cgroup_file		events_file;</span><br><span class="line"></span><br><span class="line">	/* Number of times fork failed because limit was hit. */</span><br><span class="line">	atomic64_t			events_limit;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这里的PID_MAX_LIMIT就是400w的那个pid上限。更多cgroup的限制可以参考:<a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html" target="_blank" rel="noopener">Control Group v2</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/Kernel/" rel="tag"># Kernel</a>
+              <a href="/tags/Memory/" rel="tag"># Memory</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/01/12/Linux-Thead-Model-and-Impl/" rel="prev" title="Linux Thead Model and Impl">
+      <i class="fa fa-chevron-left"></i> Linux Thead Model and Impl
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Reference"><span class="nav-text">Reference</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-task-struct"><span class="nav-text">1. task_struct</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-struct-thread-info"><span class="nav-text">1.1. struct thread_info</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-process-state"><span class="nav-text">1.2. process state</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-1-TASK-PARKED"><span class="nav-text">1.2.1. TASK_PARKED</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-Thread-stack"><span class="nav-text">1.2. Thread stack</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-Process-Scheduler"><span class="nav-text">1.3. Process Scheduler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-PID-quick-search"><span class="nav-text">1.4. PID quick search</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-PID-分配"><span class="nav-text">1.5. PID 分配</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-5-1-pidmap分配：2-6-13"><span class="nav-text">1.5.1. pidmap分配：2.6.13</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-5-2-idr分配：4-11-rc-kernel之前"><span class="nav-text">1.5.2. idr分配：4.11-rc kernel之前</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-5-3-idr分配：4-11-rc-kernel改进"><span class="nav-text">1.5.3. idr分配：4.11-rc kernel改进</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-6-Namespace"><span class="nav-text">1.6. Namespace</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-7-Wait-Queue"><span class="nav-text">1.7. Wait Queue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-8-process-resource-limit"><span class="nav-text">1.8. process resource limit</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Leo Zhou</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Leo Zhou</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.6.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/pisces.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
